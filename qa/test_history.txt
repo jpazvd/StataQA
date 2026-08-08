@@ -1,0 +1,20 @@
+
+==============================================================================
+Test Run:    8 Aug 2026
+Started:    10:18:12
+Ended:      10:18:16
+Duration:   0m 4s
+Branch:     main
+Commit:     0edc7a6ffcd244d994bf49b6c77c72952efb7cee
+Dirty:      no
+Version:    2.3.0
+Stata:      17 MP (Windows)
+Run:        87
+Passed:     87
+Failed:     0
+Skipped:    0
+Failed IDs: 
+Skip notes: 
+Notes:      path=qa pattern=test*.do
+Result:     GATE GREEN
+==============================================================================
