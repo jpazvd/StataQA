@@ -3,3 +3,8 @@
 *.log
 qa/logs/
 qa/fixtures/pipeline/output/
+
+# The SSC submission zip is built from src/s/ at release time and mailed, not
+# distributed from here. Committing it would leave a copy that goes stale the
+# moment src/ changes while still claiming to be what was submitted.
+stataqa_ssc.zip
