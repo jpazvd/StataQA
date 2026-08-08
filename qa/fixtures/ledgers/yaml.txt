@@ -1,0 +1,14 @@
+======================================================================
+Test Run:   7 Aug 2026
+Started:   00:11:38
+Ended:     00:17:03
+Duration:  5m 25s
+Branch:    main
+Version:   2.0.1
+Stata:     17
+Tests:     36 run, 34 passed, 2 failed
+Skipped:   0
+Result:    FAILED
+Failed:     INT-02 INT-03
+Log:       run_tests.log
+======================================================================

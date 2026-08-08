@@ -1,0 +1,14 @@
+======================================================================
+Test Run: 22 Feb 2026
+Started:  15:12:41
+Ended:    15:25:54
+Duration: 13m 13s
+Branch:   main
+Version:  2.3.0
+Stata:    17
+Tests:    63 run, 61 passed, 2 failed
+Skipped:  0
+Result:   FAILED
+Failed:   XPLAT-01, XPLAT-04
+Log:      run_tests.log
+======================================================================

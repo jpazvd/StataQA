@@ -1,0 +1,21 @@
+==============================================================================
+Test Run:   8 Aug 2026
+Started:   10:03:18
+Ended:     10:03:29
+Duration:  0m 11s
+Branch:    main
+Version:   1.5.0
+Stata:     17 IC (Windows)
+Suites:    8 run, 8 green, 0 red, 0 skipped, 0 separate
+Checks:    217
+  - SMOKE passed 48 checks
+  - CHECKERS passed 11 checks
+  - CONFIG passed 45 checks
+  - CATALOG passed 7 checks
+  - INSTALL external 41 checks
+  - DET passed 53 checks
+  - INT passed 9 checks
+  - DOC passed 3 checks
+Result:    GATE GREEN
+Logs:      qa/logs/<suite>.log
+==============================================================================

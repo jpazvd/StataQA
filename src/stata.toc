@@ -1,0 +1,9 @@
+v 2.3.0
+d StataQA -- local certification and quality assurance for Stata packages
+d Joao Pedro Azevedo (UNICEF)
+d https://github.com/jpazvd/StataQA
+d
+d Install with: net install stataqa
+d
+
+p stataqa   Local certification and quality assurance for Stata packages

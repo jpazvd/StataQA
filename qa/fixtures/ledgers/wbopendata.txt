@@ -1,0 +1,14 @@
+======================================================================
+Test Run: 28 Apr 2026
+Started:  16:00:08
+Ended:    16:41:42
+Duration: 41m 34s
+Version:  18.7.0
+Build:    25Apr2026
+Branch:   main
+Stata:    17
+Tests:    92 run, 91 passed, 1 failed
+Result:   FAILED
+Failed:   CACHE-05
+Log:      test_results_v18.7.0_28Apr2026.log
+======================================================================

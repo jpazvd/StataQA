@@ -1,0 +1,5 @@
+# Run artifacts: the suite writes logs and pipeline build products on every
+# run; neither is part of the distributed package or the public record.
+*.log
+qa/logs/
+qa/fixtures/pipeline/output/
