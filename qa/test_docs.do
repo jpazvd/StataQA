@@ -148,8 +148,18 @@ stqa_endtest
 * Deterministic and cheap: these re-run nothing. They read the shipped logs
 * and compare them against the version the package actually is.
 *---------------------------------------------------------------------------
+* examples/ is optional in a checkout -- the SSC package ships src/ only -- so
+* the DOC-09..11 group skips when neither log is there. Each file is confirmed
+* separately, because a checkout carrying one and not the other is not an
+* examples-less checkout, it is a broken one. Folded into a single flag, a
+* missing stataqa_example.log left the skip unfired and the version scan
+* returned "" for it, so DOC-09 reported a file that was not there as a file
+* that carries no banner -- the wrong defect, and the wrong remedy.
 capture confirm file "examples/stataqa_tour.log"
-local haveex = (_rc == 0)
+local havetour = (_rc == 0)
+capture confirm file "examples/stataqa_example.log"
+local haveshort = (_rc == 0)
+local haveex = (`havetour' | `haveshort')
 
 * The scan runs in Mata, for the same reason stqa_scanlog does. A log is
 * arbitrary text: the shipped example log contains a -file write- fixture
@@ -213,6 +223,8 @@ end
 stqa_test DOC-09 "the shipped example logs were produced by this version of the package"
     stqa_skip if !`haveex', msg("examples/ is not present in this checkout")
     stqa_assert `"`pkgver'"' != "", msg("could not read the package version from src/s/stataqa.ado")
+    stqa_assert `havetour' == 1, msg("examples/stataqa_tour.log is missing from a checkout that ships examples/")
+    stqa_assert `haveshort' == 1, msg("examples/stataqa_example.log is missing from a checkout that ships examples/")
     * A missing banner and a stale banner are different defects with different
     * remedies -- the first means the example stopped stating its provenance,
     * the second that the log was not regenerated -- so they are asserted
@@ -226,6 +238,7 @@ stqa_endtest
 
 stqa_test DOC-10 "the shipped tour log records a run that finished, and finished green"
     stqa_skip if !`haveex', msg("examples/ is not present in this checkout")
+    stqa_assert `havetour' == 1, msg("examples/stataqa_tour.log is missing from a checkout that ships examples/")
     * a truncated or red log would still LOOK like a shipped artifact; the
     * sentinel and the verdict are what make it evidence
     quietly stqa_scanlog "examples/stataqa_tour.log"
@@ -255,10 +268,21 @@ stqa_endtest
 * count has to be changed on purpose. A pinned number that someone must edit
 * knowingly is the point, not an inconvenience.
 *---------------------------------------------------------------------------
-mata: st_local("exgreen", strofreal(sum(strpos(cat("examples/stataqa_example.log"), "GATE GREEN") :> 0) > 0))
+* Guarded on existence for the same reason the version scan is: Mata cat()
+* raises r(601) on a file that is not there, and this line sits at file scope,
+* so on a checkout without examples/ it would kill test_docs.do before DOC-11
+* could skip -- defeating the very skip the block declares.
+mata:
+    g = ""
+    if (fileexists("examples/stataqa_example.log")) {
+        g = strofreal(sum(strpos(cat("examples/stataqa_example.log"), "GATE GREEN") :> 0) > 0)
+    }
+    st_local("exgreen", g)
+end
 
 stqa_test DOC-11 "the shipped short example is green where it is graded, and red only where it means to be"
     stqa_skip if !`haveex', msg("examples/ is not present in this checkout")
+    stqa_assert `haveshort' == 1, msg("examples/stataqa_example.log is missing from a checkout that ships examples/")
     quietly stqa_scanlog "examples/stataqa_example.log"
     local edone = r(done)
     local efail = r(fail)
