@@ -19,6 +19,34 @@
 version 14.0
 clear all
 
+* ---- Which stataqa produced this log? ------------------------------------
+* Stated here, at the top, and read from the running package rather than typed.
+* The version does appear further down inside a ledger stanza, but only as a
+* side effect of that stanza being printed: a reader should not have to hunt
+* for it, and a check should not rest on a display that exists for some other
+* reason.
+*
+* Read from the dispatcher's own *! header rather than shown with -which-,
+* because -which- prints the install path and nothing in this log may name a
+* machine. Read in Mata, because a macro cannot safely hold arbitrary file text.
+quietly findfile stataqa.ado
+local stqa_ado `"`r(fn)'"'
+mata:
+    v = ""
+    L = cat(st_local("stqa_ado"))
+    if (rows(L) > 0) {
+        s = strtrim(L[1])
+        p = strpos(s, "version ")
+        if (p > 0) {
+            v = strtrim(substr(s, p + 8, .))
+            q = strpos(v, " ")
+            if (q > 0) v = substr(v, 1, q - 1)
+        }
+    }
+    st_local("stqaver", v)
+end
+display "stataqa version : `stqaver'"
+
 * clear all does NOT drop global macros, and block state is carried in
 * globals. A standalone script must therefore reset them itself, or an
 * earlier run that died inside a skipped block leaves $stqa_skip_block set
