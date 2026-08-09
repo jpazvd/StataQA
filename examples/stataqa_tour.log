@@ -1,8 +1,8 @@
 ----------------------------------------------------------------------------------------------------
       name:  tourlog
-       log:  C:\tmp\stqa_tourgen232\stataqa_tour.log
+       log:  C:\tmp\stqa_tourgen240\stataqa_tour.log
   log type:  text
- opened on:   9 Aug 2026, 06:36:52
+ opened on:   9 Aug 2026, 10:46:41
 
 . do "stataqa_tour.do"
 
@@ -46,7 +46,7 @@
 . capture mkdir "stataqa_tour"
 
 . cd "stataqa_tour"
-C:\tmp\stqa_tourgen232\stataqa_tour
+C:\tmp\stqa_tourgen240\stataqa_tour
 
 . 
 . * a true first run every time
@@ -426,7 +426,7 @@ stqa_scanlog: qa/logs/test_suite_stqa.log
   sentinel : found (the suite ran to completion)
 PASS: test_suite 12 check(s) passed
 ----------------------------------------------------------------
-stataqa summary  (1 file(s), 13 check(s), 0.000s)
+stataqa summary  (1 file(s), 13 check(s), 1.000s)
   files : 1 passed, 0 failed, 0 not completed, 0 skipped
   checks: 12 passed, 0 failed, 1 skipped
     family     run  passed  failed  skipped  meaning
@@ -705,11 +705,11 @@ stqa_scanlog: qa/logs/test_suite_stqa.log
 
 . stataqa history using "qa/test_history.txt", check
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  06:36:52 to 06:36:52  (0m 0s)
+  run      : 9 Aug 2026  10:46:42 to 10:46:42  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
-  version  : 2.3.2
+  version  : 2.4.0
   stata    : 17 MP (Windows)
   counts   : 13 run, 12 passed, 0 failed, 1 skipped
   skip notes: INT-02: no credentials in this environment
@@ -738,11 +738,11 @@ skip notes : INT-02: no credentials in this environment
 . * with the absence of a repository.)
 . stataqa validate using "qa/test_history.txt"
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  06:36:52 to 06:36:52  (0m 0s)
+  run      : 9 Aug 2026  10:46:42 to 10:46:42  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
-  version  : 2.3.2
+  version  : 2.4.0
   stata    : 17 MP (Windows)
   counts   : 13 run, 12 passed, 0 failed, 1 skipped
   skip notes: INT-02: no credentials in this environment
@@ -1038,7 +1038,7 @@ end of do-file
 
 . log close tourlog
       name:  tourlog
-       log:  C:\tmp\stqa_tourgen232\stataqa_tour.log
+       log:  C:\tmp\stqa_tourgen240\stataqa_tour.log
   log type:  text
- closed on:   9 Aug 2026, 06:36:52
+ closed on:   9 Aug 2026, 10:46:42
 ----------------------------------------------------------------------------------------------------
