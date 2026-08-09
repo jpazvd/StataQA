@@ -23,7 +23,20 @@ clear all
 * Read from the dispatcher's own *! header rather than shown with -which-,
 * because -which- prints the install path and nothing in this log may name a
 * machine. Read in Mata, because a macro cannot safely hold arbitrary file text.
-quietly findfile stataqa.ado
+*
+* Both steps are guarded, because this banner is what the log says about its
+* own provenance. Unguarded, a missing package aborts on Stata's own r(601),
+* naming a file the reader never asked for; and an unreadable header prints an
+* empty version, shipping a log that states nothing while looking like it
+* states something.
+capture quietly findfile stataqa.ado
+if _rc {
+    display as error "stataqa is not installed, or is not on the adopath."
+    display as error "This example demonstrates stataqa. Install it with"
+    display as error "    . net install stataqa, from(URL) replace"
+    display as error "where URL is https://raw.githubusercontent.com/jpazvd/StataQA/main/src"
+    exit 601
+}
 local stqa_ado `"`r(fn)'"'
 mata:
     v = ""
@@ -39,6 +52,11 @@ mata:
     }
     st_local("stqaver", v)
 end
+if "`stqaver'" == "" {
+    display as error "no version header could be read from the installed stataqa.ado."
+    display as error "This log could not state which stataqa produced it, so it is not written."
+    exit 9
+}
 display "stataqa version : `stqaver'"
 
 * ---- Everything is written under ./stataqa_example/, created here, so the ----

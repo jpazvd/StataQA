@@ -213,6 +213,13 @@ end
 stqa_test DOC-09 "the shipped example logs were produced by this version of the package"
     stqa_skip if !`haveex', msg("examples/ is not present in this checkout")
     stqa_assert `"`pkgver'"' != "", msg("could not read the package version from src/s/stataqa.ado")
+    * A missing banner and a stale banner are different defects with different
+    * remedies -- the first means the example stopped stating its provenance,
+    * the second that the log was not regenerated -- so they are asserted
+    * separately. Folded together, an absent banner reads as version "" and the
+    * message advises the wrong fix.
+    stqa_assert `"`tourver'"' != "", msg("stataqa_tour.log carries no 'stataqa version :' banner; the example no longer states which package produced it")
+    stqa_assert `"`exver'"' != "", msg("stataqa_example.log carries no 'stataqa version :' banner; the example no longer states which package produced it")
     stqa_assert `"`tourver'"' == `"`pkgver'"', msg("stataqa_tour.log records version `tourver' but the package is `pkgver'; regenerate the example logs")
     stqa_assert `"`exver'"' == `"`pkgver'"', msg("stataqa_example.log records version `exver' but the package is `pkgver'; regenerate the example logs")
 stqa_endtest
