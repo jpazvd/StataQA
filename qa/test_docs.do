@@ -220,3 +220,39 @@ stqa_test DOC-10 "the shipped tour log records a run that finished, and finished
     stqa_assert `sdone' == 1, msg("the shipped tour log carries no completion sentinel; the run it records did not finish")
     stqa_assert `sfail' == 0, msg("the shipped tour log records `sfail' failure(s); the example ships a red run")
 stqa_endtest
+
+*---------------------------------------------------------------------------
+* The short example needs a different check from the tour, and that is the
+* whole point of having one.
+*
+* DOC-10 can demand zero failures of the tour. It cannot of this log, because
+* this log SHIPS a failure on purpose: section 6 demonstrates the vacuity
+* guard, where an assertion over an empty selection passes vacuously under
+* Stata's own -assert- semantics and fails under -null-. Scanning it the way
+* DOC-10 scans the tour would report that demonstration as a red example.
+*
+* So the deliberate failure is pinned rather than dodged: exactly one, and it
+* must be the ad-hoc one. Until 09aug2026 this log had no completion or
+* verdict check at all -- DOC-09 compared its version stamp and nothing else,
+* so a truncated or genuinely red example would have shipped with DOC-09 still
+* passing. That is the gap this closes.
+*
+* If the example gains or loses a deliberate failure, this check fires and the
+* count has to be changed on purpose. A pinned number that someone must edit
+* knowingly is the point, not an inconvenience.
+*---------------------------------------------------------------------------
+mata: st_local("exgreen", strofreal(sum(strpos(cat("examples/stataqa_example.log"), "GATE GREEN") :> 0) > 0))
+
+stqa_test DOC-11 "the shipped short example is green where it is graded, and red only where it means to be"
+    stqa_skip if !`haveex', msg("examples/ is not present in this checkout")
+    quietly stqa_scanlog "examples/stataqa_example.log"
+    local edone = r(done)
+    local efail = r(fail)
+    * scanlog builds the id list with a space separator, so a single id arrives
+    * as " ADHOC" -- trim before comparing, or the check fails on whitespace
+    local eids = trim(`"`r(ids)'"')
+    stqa_assert `edone' == 1, msg("the shipped example log carries no completion sentinel; the run it records did not finish")
+    stqa_assert `"`exgreen'"' == "1", msg("the shipped example log records no GATE GREEN; its embedded suite run was not green")
+    stqa_assert `efail' == 1, msg("the shipped example log records `efail' failure(s), expected exactly 1 -- the vacuity demonstration in section 6. More means something really failed; fewer means the demonstration stopped demonstrating.")
+    stqa_assert `"`eids'"' == "ADHOC", msg("the one failure in the example log is booked against `eids', expected ADHOC -- a named check failed where only the ad-hoc vacuity demonstration should")
+stqa_endtest
