@@ -176,10 +176,20 @@ mata:
     }
     st_local("pkgver", v)
 
-    // the version each shipped log says produced it, from the "version : X"
-    // line stataqa writes into every run header. The line-initial rule is the
-    // same one the verdict scanner uses: an echoed source line reads
-    // ". version 14.0" and must not be mistaken for the header stamp.
+    // The version each shipped log says produced it, read from the banner each
+    // example prints for itself: "stataqa version : X".
+    //
+    // It used to be read from the "version  : X" line of a ledger stanza. That
+    // worked, but only because the examples happen to display a stanza -- the
+    // version reached the log as a SIDE EFFECT of something else being shown,
+    // sat 200-700 lines down, and would have vanished silently if an example
+    // ever stopped printing its ledger. Each example now states the running
+    // version outright, near the top, read from the installed dispatcher's own
+    // header, and this check keys on that statement.
+    //
+    // The line-initial rule is the verdict scanner's: an echoed source line
+    // reads `. display "stataqa version : ..."` and starts with a period, so
+    // the echo cannot be mistaken for the output it produced.
     files = ("examples/stataqa_tour.log", "examples/stataqa_example.log")
     names = ("tourver", "exver")
     for (k = 1; k <= 2; k++) {
@@ -188,14 +198,11 @@ mata:
             L = cat(files[k])
             for (i = 1; i <= rows(L); i++) {
                 s = strtrim(L[i])
-                if (substr(s, 1, 8) == "version ") {
-                    p = strpos(s, ":")
-                    if (p > 0) {
-                        v = strtrim(substr(s, p + 1, .))
-                        q = strpos(v, " ")
-                        if (q > 0) v = substr(v, 1, q - 1)
-                        break
-                    }
+                if (substr(s, 1, 17) == "stataqa version :") {
+                    v = strtrim(substr(s, 18, .))
+                    q = strpos(v, " ")
+                    if (q > 0) v = substr(v, 1, q - 1)
+                    break
                 }
             }
         }
