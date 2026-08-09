@@ -9,6 +9,13 @@ qa/fixtures/pipeline/output/
 !examples/*.log
 !examples/**/logs/*.log
 
+# ...and so is a blessed replay log, for the same reason one step further in:
+# it IS the golden master. stqa_replay compares each candidate run against this
+# file, so if it is not in the repository there is nothing to compare against
+# and the check degrades to "no blessed log found" -- a red that reads like a
+# missing feature rather than like drift. Run logs under qa/logs/ stay ignored.
+!qa/replay/*.log
+
 # The SSC submission zip is built from src/s/ at release time and mailed, not
 # distributed from here. Committing it would leave a copy that goes stale the
 # moment src/ changes while still claiming to be what was submitted.

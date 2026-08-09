@@ -183,6 +183,20 @@ global stqa_role_run "`role_saved'"
 
 cd "`home'"
 
+* ---- the repository's own record --------------------------------------
+* Everything above exercises the mechanism in a throwaway sandbox, which
+* proves the commands work and proves nothing about this tree. These two run
+* against what ships: qa/manifest.txt pins the four frozen ledger captures
+* DET-07..11 parse and the three pipeline stages, and qa/replay/ holds the
+* blessed pair for the pipeline's output. Both are checked on every run, so
+* drift in the suite's own inputs is a failing check rather than a discovery
+* made later by hand.
+capture noisily stqa_manifest verify, quiet
+local rc_own = _rc
+local n_own  = r(n)
+capture noisily stqa_replay using "qa/replay/pipeline.do"
+local rc_rep = _rc
+
 * ---- assertions, from the repo cwd ------------------------------------
 stqa_test DET-12 "blessing writes typed entries and the sweep verifies clean"
     stqa_assert `rc_b1' == 0, msg("blessing the .dta fixture failed (rc `rc_b1')")
@@ -226,6 +240,19 @@ stqa_endtest
 
 stqa_test REGR-24 "the determinism contract rejects a log that names the tmpdir"
     stqa_assert `rc_r4' == 9, msg("a log carrying a tmpdir path passed the determinism contract (rc `rc_r4')")
+stqa_endtest
+
+stqa_test DET-17 "the repository's own blessed inputs still verify"
+    stqa_assert `rc_own' == 0, msg("the repository's manifest did not verify clean (rc `rc_own')")
+    * The count is pinned deliberately. A sweep that quietly checked fewer
+    * entries than were blessed would report the same clean rc as one that
+    * checked them all -- the false green this package exists to close. If you
+    * bless something new, change this number in the same commit.
+    stqa_assert `n_own' == 9, msg("the sweep checked `n_own' entries, expected 9 (7 frozen inputs + the replay pair's do and log)")
+stqa_endtest
+
+stqa_test REGR-25 "the fixture pipeline still produces the numbers it produced"
+    stqa_assert `rc_rep' == 0, msg("the blessed replay master did not reproduce (rc `rc_rep')")
 stqa_endtest
 
 stqa_test META-23 "the excursions restored the working directory"

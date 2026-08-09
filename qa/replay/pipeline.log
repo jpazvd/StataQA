@@ -1,0 +1,80 @@
+
+. *! qa/replay/pipeline.do  version 1.0.0  09aug2026
+. * A golden master for the fixture pipeline: run the three stages and print the
+. * statistics they produce.  Blessed against qa/replay/pipeline.log.
+. *
+. * Why this pair exists.  INT-11..13 assert that the stages return cleanly, tha
+> t
+. * the output dataset is written, and that the constructed indicator is a
+. * proportion -- all of which stay true of a pipeline that has started computin
+> g
+. * something else entirely.  This pair pins the NUMBERS, so a change in the
+. * stages surfaces as output drift instead of as a still-passing shape check.
+. * That is the division of labour the package argues for: assertions say what
+. * must hold, a blessed master says what was.
+. *
+. * Determinism.  01_import.do seeds the generator, and every path printed here
+. * is relative, so the log reproduces on another machine -- the two conditions
+. * stqa_replay's contract enforces at blessing time.  Stata's random-number
+. * stream is version-dependent; the version gate handles that by SKIPping when
+. * the replaying Stata differs from the blessing one, rather than reporting
+. * drift that is really a different Stata.
+. *
+. * No verdict tokens are emitted here on purpose.  A replayed do-file's output
+. * reaches the parent case log, and a line-initial PASS or FAIL token would be
+. * counted by the log scanner as a verdict of the suite that replayed it.
+. *
+. * Nor does this file spell those two tokens with a slash between them.  The
+. * determinism contract rejects a drive-absolute path with "[A-Za-z]:[/\]", and
+. * that pattern matches ordinary prose joining the two words with a slash -- th
+> e
+. * first blessing of this master was refused for exactly that, on this comment.
+. * The over-match is conservative (it refuses a good log rather than blessing a
+. * bad one) and is logged for the next package revision.
+. * Author: Joao Pedro Azevedo (UNICEF)
+. 
+. quietly do "qa/fixtures/pipeline/01_import.do"
+
+. quietly do "qa/fixtures/pipeline/02_clean.do"
+
+. quietly do "qa/fixtures/pipeline/03_construct.do"
+
+. 
+. use "qa/fixtures/pipeline/output/indicators.dta", clear
+
+. 
+. quietly count
+
+. display "observations   : " r(N)
+observations   : 100
+
+. 
+. quietly summarize value
+
+. display "value mean     : " %6.4f r(mean)
+value mean     : 0.5445
+
+. display "value min      : " %6.4f r(min)
+value min      : 0.0057
+
+. display "value max      : " %6.4f r(max)
+value max      : 0.9879
+
+. 
+. quietly summarize indicator_value
+
+. display "indicator mean : " %6.4f r(mean)
+indicator mean : 0.5300
+
+. 
+. quietly count if indicator_value == 1
+
+. display "indicator ones : " r(N)
+indicator ones : 53
+
+. 
+. display "PIPELINE REPLAY COMPLETE"
+PIPELINE REPLAY COMPLETE
+
+. 
+end of do-file

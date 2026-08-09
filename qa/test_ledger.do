@@ -21,10 +21,35 @@
 * Author: Joao Pedro Azevedo (UNICEF)
 
 *---------------------------------------------------------------------------
+* Verified access to the four captures.
+*
+* The paths are not read raw. Each is resolved through stqa_fixture, which
+* requires the file to exist, to be listed in qa/manifest.txt, and to still
+* match the checksum it was blessed with. Without that, a capture edited or
+* regenerated at any point would quietly make DET-07..11 test a dialect other
+* than the one they name -- and pass, because the parser would still parse
+* whatever it was handed. That is the input half of the chain of custody the
+* package argues for, applied to the package's own suite.
+*
+* The resolves sit at FILE scope on purpose. A block that is targeted out
+* still executes its ordinary commands, but stqa_ commands inside it no-op --
+* so an in-block resolve would hand the parser an empty path during any
+* single-test run.
+*---------------------------------------------------------------------------
+stqa_fixture using "qa/fixtures/ledgers/unicefdata.txt", resolve
+local f_unicefdata `"`r(fn)'"'
+stqa_fixture using "qa/fixtures/ledgers/yaml.txt", resolve
+local f_yaml       `"`r(fn)'"'
+stqa_fixture using "qa/fixtures/ledgers/wbopendata.txt", resolve
+local f_wbopendata `"`r(fn)'"'
+stqa_fixture using "qa/fixtures/ledgers/datalib.txt", resolve
+local f_datalib    `"`r(fn)'"'
+
+*---------------------------------------------------------------------------
 * unicefdata: comma-separated failing IDs, compact Tests: line
 *---------------------------------------------------------------------------
 stqa_test DET-07 "a unicefdata ledger stanza is read correctly"
-    local led "qa/fixtures/ledgers/unicefdata.txt"
+    local led `"`f_unicefdata'"'
     quietly stqa_history using "`led'", check
     local found = r(found)
     local run   = r(run)
@@ -37,7 +62,7 @@ stqa_test DET-07 "a unicefdata ledger stanza is read correctly"
 stqa_endtest
 
 stqa_test DET-08 "failing IDs are not mistaken for a failure count"
-    local led "qa/fixtures/ledgers/unicefdata.txt"
+    local led `"`f_unicefdata'"'
     quietly stqa_history using "`led'", check
     local f  = r(fail)
     local id `"`r(ids)'"'
@@ -54,7 +79,7 @@ stqa_endtest
 * yaml: space-separated failing IDs
 *---------------------------------------------------------------------------
 stqa_test DET-09 "a yaml ledger stanza is read correctly"
-    local led "qa/fixtures/ledgers/yaml.txt"
+    local led `"`f_yaml'"'
     quietly stqa_history using "`led'", check
     local found = r(found)
     local run   = r(run)
@@ -69,7 +94,7 @@ stqa_endtest
 * wbopendata: carries Build:, and writes no Skipped: line at all
 *---------------------------------------------------------------------------
 stqa_test DET-10 "a wbopendata ledger stanza is read, including Build:"
-    local led "qa/fixtures/ledgers/wbopendata.txt"
+    local led `"`f_wbopendata'"'
     quietly stqa_history using "`led'", check
     local found = r(found)
     local run   = r(run)
@@ -85,7 +110,7 @@ stqa_endtest
 * whose indented lines must NOT be parsed as fields
 *---------------------------------------------------------------------------
 stqa_test DET-11 "a datalib ledger stanza is read, suites and checks separately"
-    local led "qa/fixtures/ledgers/datalib.txt"
+    local led `"`f_datalib'"'
     quietly stqa_history using "`led'", check
     local found  = r(found)
     local checks = r(checks)

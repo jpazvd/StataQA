@@ -82,6 +82,14 @@ stqa_test DOC-04 "an examples gallery yields its named programs, not its entry p
     * the gallery's own entry point is named after the file and must not be
     * harvested: calling it with no argument does nothing useful
     local found_dispatcher 0
+    * A targeted-out block still runs its ordinary commands, but stqa_examples
+    * is one of ours and no-ops -- so r(n_found) comes back missing and the
+    * loop below becomes -forvalues i = 1/.-, which is r(198) and kills the
+    * whole FILE. That is why asking for any single id in this file used to
+    * abort it: the failure had nothing to do with the id requested. Guard the
+    * bound here; the durable fix is for stqa_examples to guarantee
+    * r(n_found)=0 when it no-ops, which is logged against the command.
+    if "`n'" == "" | "`n'" == "." local n 0
     forvalues i = 1/`n' {
         if `"`r(cmd`i')'"' == "stqa_doc04_gallery" {
             local found_dispatcher 1
