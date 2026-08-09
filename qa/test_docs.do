@@ -129,3 +129,86 @@ stqa_test DOC-08 "a quoted argument survives to the command under test"
     global stqa_block_failed ""
     stqa_assert `rc' == 0, msg("a quoted argument was mangled (rc `rc')")
 stqa_endtest
+
+*---------------------------------------------------------------------------
+* The shipped examples are documentation with an executable claim attached:
+* each ships beside the log it produced. A log recorded under an older build
+* silently misdescribes the package -- the documentation drift this suite
+* exists to catch, one level up. Found by hand on 09aug2026, when both example
+* logs still recorded 2.3.0 after the package had moved to 2.3.1.
+*
+* Deterministic and cheap: these re-run nothing. They read the shipped logs
+* and compare them against the version the package actually is.
+*---------------------------------------------------------------------------
+capture confirm file "examples/stataqa_tour.log"
+local haveex = (_rc == 0)
+
+* The scan runs in Mata, for the same reason stqa_scanlog does. A log is
+* arbitrary text: the shipped example log contains a -file write- fixture
+* whose payload carries an embedded compound quote, and reading such a line
+* into a macro fails with r(132), "too few quotes". Mata strings never pass
+* through macro expansion, so the scan cannot be broken by whatever the log
+* happens to contain. The first attempt here used -file read- and died on
+* exactly that line -- silently, since the read sat inside a -capture-, which
+* left the version empty and the check red for the wrong reason.
+mata:
+    // the version the package actually is, from the dispatcher's *! header
+    v = ""
+    if (fileexists("src/s/stataqa.ado")) {
+        L = cat("src/s/stataqa.ado")
+        if (rows(L) > 0) {
+            s = strtrim(L[1])
+            p = strpos(s, "version ")
+            if (p > 0) {
+                v = strtrim(substr(s, p + 8, .))
+                q = strpos(v, " ")
+                if (q > 0) v = substr(v, 1, q - 1)
+            }
+        }
+    }
+    st_local("pkgver", v)
+
+    // the version each shipped log says produced it, from the "version : X"
+    // line stataqa writes into every run header. The line-initial rule is the
+    // same one the verdict scanner uses: an echoed source line reads
+    // ". version 14.0" and must not be mistaken for the header stamp.
+    files = ("examples/stataqa_tour.log", "examples/stataqa_example.log")
+    names = ("tourver", "exver")
+    for (k = 1; k <= 2; k++) {
+        v = ""
+        if (fileexists(files[k])) {
+            L = cat(files[k])
+            for (i = 1; i <= rows(L); i++) {
+                s = strtrim(L[i])
+                if (substr(s, 1, 8) == "version ") {
+                    p = strpos(s, ":")
+                    if (p > 0) {
+                        v = strtrim(substr(s, p + 1, .))
+                        q = strpos(v, " ")
+                        if (q > 0) v = substr(v, 1, q - 1)
+                        break
+                    }
+                }
+            }
+        }
+        st_local(names[k], v)
+    }
+end
+
+stqa_test DOC-09 "the shipped example logs were produced by this version of the package"
+    stqa_skip if !`haveex', msg("examples/ is not present in this checkout")
+    stqa_assert `"`pkgver'"' != "", msg("could not read the package version from src/s/stataqa.ado")
+    stqa_assert `"`tourver'"' == `"`pkgver'"', msg("stataqa_tour.log records version `tourver' but the package is `pkgver'; regenerate the example logs")
+    stqa_assert `"`exver'"' == `"`pkgver'"', msg("stataqa_example.log records version `exver' but the package is `pkgver'; regenerate the example logs")
+stqa_endtest
+
+stqa_test DOC-10 "the shipped tour log records a run that finished, and finished green"
+    stqa_skip if !`haveex', msg("examples/ is not present in this checkout")
+    * a truncated or red log would still LOOK like a shipped artifact; the
+    * sentinel and the verdict are what make it evidence
+    quietly stqa_scanlog "examples/stataqa_tour.log"
+    local sdone = r(done)
+    local sfail = r(fail)
+    stqa_assert `sdone' == 1, msg("the shipped tour log carries no completion sentinel; the run it records did not finish")
+    stqa_assert `sfail' == 0, msg("the shipped tour log records `sfail' failure(s); the example ships a red run")
+stqa_endtest

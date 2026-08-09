@@ -54,6 +54,17 @@ capture erase "qa/manifest.txt"
 capture erase "qa/replay/demo.log"
 capture erase "qa/replay/leaky.log"
 
+* Blessing belongs to certify, and stqa_manifest/stqa_replay refuse it under
+* the review role. This file TESTS blessing, so it takes certify semantics for
+* the excursion and puts the caller's role back before returning. Nothing in
+* the repository is touched: every ceremony below writes inside the sandbox.
+* Without this, the whole file failed under -stataqa run- while passing under
+* -stataqa certify- -- a red gate on a clean checkout, which is the false
+* record this package exists to prevent, wearing the other colour. The
+* guardrail is not waived, it is asserted: see DET-16.
+local role_saved "$stqa_role_run"
+global stqa_role_run "certify"
+
 * bless the two fixtures and the replay pair
 capture noisily stqa_manifest add using "qa/fixtures/cars.dta"
 local rc_b1 = _rc
@@ -146,6 +157,30 @@ capture stqa_manifest verify using "qa/fixtures/cars.dta", quiet
 local rc_d1 = _rc
 global stqa_block_failed ""
 
+* ---- the guardrail itself ---------------------------------------------
+* Refusing is only half of it: a refusal that still wrote would be worse than
+* no guardrail, because the manifest would then carry an entry no certify run
+* ever blessed. So the ceremony is attempted under review and the file is
+* then looked for in the manifest, where it must be absent.
+quietly {
+    tempname fh
+    file open `fh' using "qa/fixtures/guard.txt", write text replace
+    file write `fh' "beta = 2" _n
+    file close `fh'
+}
+global stqa_role_run "review"
+capture stqa_manifest add using "qa/fixtures/guard.txt"
+local rc_g1 = _rc
+global stqa_block_failed ""
+capture stqa_replay using "qa/replay/demo.do", update
+local rc_g2 = _rc
+global stqa_block_failed ""
+capture stqa_manifest verify using "qa/fixtures/guard.txt", quiet
+local rc_g3 = _rc
+global stqa_block_failed ""
+
+global stqa_role_run "`role_saved'"
+
 cd "`home'"
 
 * ---- assertions, from the repo cwd ------------------------------------
@@ -169,6 +204,12 @@ stqa_endtest
 
 stqa_test DET-15 "a drifted fixture fails verification"
     stqa_assert `rc_d1' == 9, msg("a one-cell edit to a blessed .dta verified anyway (rc `rc_d1'); datasignature drift was not caught")
+stqa_endtest
+
+stqa_test DET-16 "blessing is refused under the review role, and writes nothing"
+    stqa_assert `rc_g1' == 9, msg("stqa_manifest add blessed under the review role (rc `rc_g1')")
+    stqa_assert `rc_g2' == 9, msg("stqa_replay update re-blessed under the review role (rc `rc_g2')")
+    stqa_assert `rc_g3' == 9, msg("a file refused blessing under review was recorded anyway (rc `rc_g3')")
 stqa_endtest
 
 stqa_test REGR-21 "a blessed replay pair verifies clean"
