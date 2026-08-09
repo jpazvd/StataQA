@@ -31,10 +31,13 @@ clear all
 * states something.
 capture quietly findfile stataqa.ado
 if _rc {
+    * The command is printed whole, exactly as README gives it, so it can be
+    * copied. The URL goes through a local only so that the echoed source line
+    * stays inside the log's width; spelled inline it wraps across two lines.
+    local stqa_url "https://raw.githubusercontent.com/jpazvd/StataQA/main/src"
     display as error "stataqa is not installed, or is not on the adopath."
     display as error "This example demonstrates stataqa. Install it with"
-    display as error "    . net install stataqa, from(URL) replace"
-    display as error "where URL is https://raw.githubusercontent.com/jpazvd/StataQA/main/src"
+    display as error `"    net install stataqa, from("`stqa_url'") replace"'
     exit 601
 }
 local stqa_ado `"`r(fn)'"'

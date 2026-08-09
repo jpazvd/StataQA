@@ -2,7 +2,7 @@
       name:  tourlog
        log:  C:\tmp\stqa_tourgenban\stataqa_tour.log
   log type:  text
- opened on:   9 Aug 2026, 12:39:38
+ opened on:   9 Aug 2026, 12:50:18
 
 . do "stataqa_tour.do"
 
@@ -48,10 +48,13 @@
 . capture quietly findfile stataqa.ado
 
 . if _rc {
+.     * The command is printed whole, exactly as README gives it, so it can be
+.     * copied. The URL goes through a local only so that the echoed source line
+.     * stays inside the log's width; spelled inline it wraps across two lines.
+.     local stqa_url "https://raw.githubusercontent.com/jpazvd/StataQA/main/src"
 .     display as error "stataqa is not installed, or is not on the adopath."
 .     display as error "This example demonstrates stataqa. Install it with"
-.     display as error "    . net install stataqa, from(URL) replace"
-.     display as error "where URL is https://raw.githubusercontent.com/jpazvd/StataQA/main/src"
+.     display as error `"    net install stataqa, from("`stqa_url'") replace"'
 .     exit 601
 . }
 
@@ -763,7 +766,7 @@ stqa_scanlog: qa/logs/test_suite_stqa.log
 
 . stataqa history using "qa/test_history.txt", check
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  12:39:39 to 12:39:39  (0m 0s)
+  run      : 9 Aug 2026  12:50:19 to 12:50:19  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
@@ -796,7 +799,7 @@ skip notes : INT-02: no credentials in this environment
 . * with the absence of a repository.)
 . stataqa validate using "qa/test_history.txt"
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  12:39:39 to 12:39:39  (0m 0s)
+  run      : 9 Aug 2026  12:50:19 to 12:50:19  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
@@ -1098,5 +1101,5 @@ end of do-file
       name:  tourlog
        log:  C:\tmp\stqa_tourgenban\stataqa_tour.log
   log type:  text
- closed on:   9 Aug 2026, 12:39:39
+ closed on:   9 Aug 2026, 12:50:19
 ----------------------------------------------------------------------------------------------------
