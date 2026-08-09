@@ -140,6 +140,82 @@ stqa_test META-21 "validate fails a record whose own arithmetic does not reconci
     stqa_assert `rc' == 9, msg("a stanza with 5 != 3+0+0 validated (rc `rc')")
 stqa_endtest
 
+* ---------------------------------------------------------------------------
+* META-24: a ledger committed into the repository it certifies stays fresh.
+*
+* The regression test for a defect found on this package's own public repo.
+* validate used to require the recorded commit to EQUAL HEAD, which is
+* unusable: committing the stanza is itself a commit, so the record was stale
+* the instant it was filed and every certification failed its own validation
+* one commit later. Two-sided on purpose -- a test that only checked the
+* ledger-only case would also pass against a validate that never fails.
+* ---------------------------------------------------------------------------
+local gitsand "`c(tmpdir)'/stqa_freshsand"
+capture shell rmdir /s /q "`gitsand'"
+capture shell rm -rf "`gitsand'"
+capture mkdir "`gitsand'"
+
+local fresh_rc = -1
+local stale_rc = -1
+
+capture noisily {
+    cd "`gitsand'"
+    capture mkdir "src"
+    capture mkdir "qa"
+    quietly {
+        tempname gh
+        file open `gh' using "src/thing.ado", write text replace
+        file write `gh' "program thing" _n "end" _n
+        file close `gh'
+    }
+    shell git init -q .
+    shell git add -A
+    shell git -c user.email=a@b -c user.name=t commit -q -m src
+
+    quietly stqa_gitinfo, nodirty
+    local gc = r(commit)
+    quietly {
+        file open `gh' using "qa/test_history.txt", write text replace
+        file write `gh' "==============================================================================" _n
+        file write `gh' "Test Run:    9 Aug 2026" _n
+        file write `gh' "Commit:     `gc'" _n
+        file write `gh' "Dirty:      no" _n
+        file write `gh' "Version:    2.3.0" _n
+        file write `gh' "Run:        3" _n
+        file write `gh' "Passed:     3" _n
+        file write `gh' "Failed:     0" _n
+        file write `gh' "Skipped:    0" _n
+        file write `gh' "Result:     GATE GREEN" _n
+        file write `gh' "==============================================================================" _n
+        file close `gh'
+    }
+
+    * (a) commit the LEDGER only -- the record must remain fresh
+    shell git add -A
+    shell git -c user.email=a@b -c user.name=t commit -q -m record
+    capture quietly stqa_validate using "qa/test_history.txt"
+    local fresh_rc = _rc
+    global stqa_block_failed ""
+
+    * (b) now change certified SOURCE -- the record must go stale
+    quietly {
+        file open `gh' using "src/thing.ado", write text replace
+        file write `gh' "program thing" _n "    di 1" _n "end" _n
+        file close `gh'
+    }
+    shell git add -A
+    shell git -c user.email=a@b -c user.name=t commit -q -m edit
+    capture quietly stqa_validate using "qa/test_history.txt"
+    local stale_rc = _rc
+    global stqa_block_failed ""
+}
+cd "`home'"
+
+stqa_test META-24 "a ledger committed into its own repository stays fresh, until the source moves"
+    stqa_assert `fresh_rc' == 0, msg("committing the stanza made the record stale (rc `fresh_rc'); a ledger kept in the repo it certifies could never validate")
+    stqa_assert `stale_rc' == 9, msg("a source change after the record did NOT go stale (rc `stale_rc'); the freshness check has stopped checking")
+stqa_endtest
+
 stqa_test META-22 "validate fails loudly when nothing was ever certified"
     capture quietly stqa_validate using "`sand'/no_such_ledger.txt"
     local rc = _rc

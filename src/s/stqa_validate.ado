@@ -1,4 +1,4 @@
-*! version 1.0.0  08aug2026
+*! version 1.1.0  09aug2026
 * stqa_validate: Validate the certification record without executing anything
 * Description: The publisher role.  Reads the ledger's last stanza and judges
 *              whether the RECORD supports a release of THIS tree: the stanza
@@ -64,31 +64,129 @@ program define stqa_validate, rclass
     * Without this check the compound false green is live: a run that forgot
     * to certify leaves the PREVIOUS green stanza in place, and a validator
     * that reads only the verdict waves through a tree the record never saw.
-    * Version-matching was always a proxy for this; the commit is exact.
+    *
+    * The question is NOT whether the recorded commit equals HEAD. That rule
+    * is the obvious one and it is unusable: committing the stanza is itself a
+    * commit, so a ledger kept in the repository it certifies is stale the
+    * instant it is filed, and every certification fails its own validation
+    * one commit later. Measured on this package's own public repository,
+    * which is how the defect was found.
+    *
+    * Nor is it whether the recorded commit equals the last commit that
+    * touched the source: a certification made at a HEAD legitimately ahead of
+    * that commit, because the commits since were documentation, would then be
+    * rejected though nothing certified had moved.
+    *
+    * The question is whether any CERTIFIED CONTENT changed between the
+    * recorded commit and now. The ledger and the run logs are the record OF a
+    * run, not the thing certified, so they are excluded; src/ and the tests
+    * are not. This is the rule Section 7 already states for the hosted-runner
+    * validator: the run must not predate the most recent change to the source.
+    *
+    * Three outcomes, kept distinct on purpose. Git absent -> cannot be
+    * checked. Recorded commit absent from this repository -> FAILURE, because
+    * the record demonstrably describes another tree; conflating that with
+    * "cannot be checked" would rebuild the false green this check exists to
+    * close. Certified files differing -> FAILURE, and they are named.
     local fresh .
     if ("`nofresh'" == "") {
         capture stqa_gitinfo, nodirty
-        if (_rc == 0 & r(inrepo) == 1) {
-            local herecommit `"`r(commit)'"'
-            if (substr(`"`v_commit'"', 1, 1) == "(" | `"`v_commit'"' == "") {
-                di as text "validate: the stanza records no commit; freshness cannot be checked"
-            }
-            else if (`"`herecommit'"' == "(unknown)") {
-                di as text "validate: the current commit could not be read; freshness cannot be checked"
-            }
-            else if (`"`v_commit'"' == `"`herecommit'"') {
-                local fresh 1
-            }
-            else {
-                di as error "validate: the record certifies a DIFFERENT tree"
-                di as error "  recorded : `v_commit'"
-                di as error "  this tree: `herecommit'"
-                local fresh 0
-                local vfail 1
-            }
+        local inrepo = 0
+        if (_rc == 0) local inrepo = r(inrepo)
+
+        if (`inrepo' != 1) {
+            di as text "validate: not a git repository; freshness cannot be checked"
+        }
+        else if (substr(`"`v_commit'"', 1, 1) == "(" | `"`v_commit'"' == "") {
+            di as text "validate: the stanza records no commit; freshness cannot be checked"
         }
         else {
-            di as text "validate: not a git repository; freshness cannot be checked"
+            * is git usable?
+            local gitok = 0
+            tempfile gvf
+            capture shell git --version > "`gvf'" 2>&1
+            capture confirm file "`gvf'"
+            if (_rc == 0) {
+                tempname gvh
+                capture file open `gvh' using "`gvf'", read text
+                if (_rc == 0) {
+                    file read `gvh' gline
+                    file close `gvh'
+                    capture local gline = trim(`"`macval(gline)'"')
+                    if (_rc) local gline ""
+                    if (substr(`"`gline'"', 1, 11) == "git version") local gitok = 1
+                }
+            }
+
+            * does this repository contain the recorded commit?
+            local haverev = 0
+            if (`gitok' == 1) {
+                tempfile cbf
+                capture shell git cat-file -t `v_commit' > "`cbf'" 2>&1
+                capture confirm file "`cbf'"
+                if (_rc == 0) {
+                    tempname cbh
+                    capture file open `cbh' using "`cbf'", read text
+                    if (_rc == 0) {
+                        file read `cbh' cline
+                        file close `cbh'
+                        capture local cline = trim(`"`macval(cline)'"')
+                        if (_rc) local cline ""
+                        if (`"`cline'"' == "commit") local haverev = 1
+                    }
+                }
+            }
+
+            * did any certified file change since?
+            local changed = -1
+            local firstfile ""
+            if (`gitok' == 1 & `haverev' == 1) {
+                tempfile dsf
+                capture shell git diff --name-only `v_commit' HEAD -- src qa ":(exclude)qa/test_history.txt" ":(exclude)qa/logs" > "`dsf'" 2>&1
+                capture confirm file "`dsf'"
+                if (_rc == 0) {
+                    tempname dfh
+                    capture file open `dfh' using "`dsf'", read text
+                    if (_rc == 0) {
+                        file read `dfh' dline
+                        local deof = r(eof)
+                        file close `dfh'
+                        capture local dline = trim(`"`macval(dline)'"')
+                        if (_rc) local dline ""
+                        if (`deof' & `"`dline'"' == "") {
+                            local changed = 0
+                        }
+                        else {
+                            local changed = 1
+                            local firstfile `"`macval(dline)'"'
+                        }
+                    }
+                }
+            }
+
+            if (`gitok' == 0) {
+                di as text "validate: git is not available; freshness cannot be checked"
+            }
+            else if (`haverev' == 0) {
+                di as error "validate: the record names a commit this repository does not contain"
+                di as error "  recorded : `v_commit'"
+                di as error "  the record was made against a different tree"
+                local fresh = 0
+                local vfail = 1
+            }
+            else if (`changed' == 1) {
+                di as error "validate: the certified content has CHANGED since the record was made"
+                di as error "  recorded    : `v_commit'"
+                di as error "  changed, e.g.: `macval(firstfile)'"
+                local fresh = 0
+                local vfail = 1
+            }
+            else if (`changed' == 0) {
+                local fresh = 1
+            }
+            else {
+                di as text "validate: git output unreadable; freshness cannot be checked"
+            }
         }
     }
 

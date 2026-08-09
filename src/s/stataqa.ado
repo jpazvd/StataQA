@@ -1,4 +1,4 @@
-*! version 2.3.0  08aug2026
+*! version 2.3.1  09aug2026
 * stataqa: Stata testing and CI command suite
 * Description: Dispatcher only. Routes the first token to the matching stqa_* command
 *              and passes the remainder of the command line through verbatim so that
