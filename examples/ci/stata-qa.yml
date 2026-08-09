@@ -1,0 +1,68 @@
+# TEMPLATE -- not an active workflow.
+#
+# Copy this to .github/workflows/ in a repository that has a self-hosted
+# runner with a licensed Stata on PATH. It is deliberately NOT installed as a
+# live workflow here: this repository has no runner registered, so the job
+# would queue on every push and never execute, and the article that documents
+# it states plainly that certification here is a manual pre-release step.
+# Shipping a workflow that cannot run would contradict that.
+
+name: Stata QA
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  # Stata is licensed software, so GitHub's hosted runners cannot execute it.
+  # This job therefore requires a self-registered machine with a licensed
+  # stata-mp on PATH.  It is one of the two license-aware CI patterns the
+  # package documents; the other is validating the certification record that a
+  # local run leaves behind, which needs no Stata at all.
+  suite:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run the certification suite
+        run: |
+          stata-mp -b do qa/_ci_run.do
+
+      - name: Publish the run log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stataqa-logs
+          path: |
+            qa/logs/
+            qa/_ci_run.log
+          if-no-files-found: warn
+
+      # The batch exit code is deliberately not trusted: on Windows, batch Stata
+      # returns an unusable code and can hang after finishing.  The verdict is
+      # read out of the log instead, which is the same rule the package applies
+      # to every suite it runs.
+      - name: Read the verdict from the log
+        shell: bash
+        run: |
+          log=qa/_ci_run.log
+          if [ ! -f "$log" ]; then
+            echo "::error::no log was produced -- the run did not start"
+            exit 1
+          fi
+          if grep -q '^ALL CHECKS PASSED' "$log"; then
+            echo "GATE GREEN"
+            exit 0
+          fi
+          if grep -q '^STATAQA SUITE COMPLETE' "$log"; then
+            echo "::error::the suite ran to completion with failures"
+            grep -E '^FAIL:' "$log" || true
+            exit 1
+          fi
+          echo "::error::no completion sentinel -- the run did not finish"
+          tail -20 "$log"
+          exit 1

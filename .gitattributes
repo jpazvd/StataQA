@@ -1,0 +1,26 @@
+# The certification ledger is never auto-merged.
+#
+# It is an append-only record, so the obvious answer is `merge=union`, which
+# keeps both sides' appended lines instead of raising a conflict. That answer
+# is wrong here, and silently so. Tested 07aug2026:
+#
+#     =====
+#     Test Run: B      <- two separate runs, fused into ONE stanza,
+#     Result: GATE RED
+#     Test Run: A         because the ===== delimiters are common lines
+#     Result: GATE GREEN  that git deduplicates
+#     =====
+#
+# The merge succeeded with rc 0. No conflict, no warning, and stqa_history's
+# check mode would then read that chimera as the last stanza. A silent
+# corruption of the record is the one outcome this package exists to prevent.
+#
+# `-merge` marks the file unmergeable, so git raises a conflict and a human
+# decides which runs are real records. That is the correct semantics: two
+# honest ledgers cannot be combined by a rule, only by someone who knows which
+# runs were certifications and which were debugging.
+#
+# The structural fix, if multi-branch certification is ever genuinely needed,
+# is one file per run rather than one appended file -- different filenames
+# never conflict. See internal/DESIGN-roles.md section 10.
+qa/test_history.txt -merge
