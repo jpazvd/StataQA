@@ -24,3 +24,22 @@
 # is one file per run rather than one appended file -- different filenames
 # never conflict. See internal/DESIGN-roles.md section 10.
 qa/test_history.txt -merge
+
+# Files under manifest control are pinned by BYTES, so git must not rewrite
+# their line endings.
+#
+# stqa_manifest records a checksum and a byte length for every non-.dta entry.
+# With end-of-line conversion left to git's discretion, those bytes are not a
+# property of the file -- they are a property of the checkout. Measured
+# 09aug2026: qa/replay/pipeline.do blessed at 2438 bytes in this repository
+# verified as 2490 in the public clone, exactly one extra byte for each of its
+# 52 lines, because core.autocrlf=true wrote CRLF on checkout. The manifest was
+# right and the file had genuinely changed; nothing was wrong except that a
+# byte-level pin had been left at the mercy of a platform setting.
+#
+# -text switches conversion off, so what is committed is what lands on disk on
+# every platform and the pin means the same thing everywhere. Only .dta entries
+# would survive without this, since datasignature hashes values rather than
+# bytes.
+qa/fixtures/** -text
+qa/replay/**   -text

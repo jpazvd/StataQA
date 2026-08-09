@@ -1,11 +1,11 @@
 * stataqa manifest -- one line per blessed file; see help stqa_manifest
 * <type> <method> <value> <filelen> <stata> <path>
-fixture sum 2324263553 661 . qa/fixtures/ledgers/datalib.txt
-fixture sum 4132170602 398 . qa/fixtures/ledgers/unicefdata.txt
-fixture sum 3222813454 418 . qa/fixtures/ledgers/wbopendata.txt
-fixture sum 587646535 405 . qa/fixtures/ledgers/yaml.txt
-fixture sum 584341853 550 . qa/fixtures/pipeline/01_import.do
-fixture sum 2585429976 177 . qa/fixtures/pipeline/02_clean.do
-fixture sum 3017378403 188 . qa/fixtures/pipeline/03_construct.do
+fixture sum 2498572144 640 . qa/fixtures/ledgers/datalib.txt
+fixture sum 3153159418 384 . qa/fixtures/ledgers/unicefdata.txt
+fixture sum 3465419775 404 . qa/fixtures/ledgers/wbopendata.txt
+fixture sum 2564140564 391 . qa/fixtures/ledgers/yaml.txt
+fixture sum 4188754392 538 . qa/fixtures/pipeline/01_import.do
+fixture sum 3546078387 172 . qa/fixtures/pipeline/02_clean.do
+fixture sum 1638443559 184 . qa/fixtures/pipeline/03_construct.do
 replay sum 1112692919 2438 17 qa/replay/pipeline.do
 replay sum 4016401696 2747 17 qa/replay/pipeline.log
