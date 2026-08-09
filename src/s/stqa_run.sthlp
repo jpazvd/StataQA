@@ -235,7 +235,7 @@ once-per-run notes fire again in the next one.
 {phang2}. {stata stataqa run}{p_end}
 
 {pstd}Run a suite that lives under a quoted absolute path:{p_end}
-{phang2}. {stata `"stataqa run "c:/GitHub/my project/tests", pattern("test_*.do") junit("out.xml")"'}{p_end}
+{phang2}. {stata `"stataqa run "c:/work/my project/tests", pattern("test_*.do") junit("out.xml")"'}{p_end}
 
 {pstd}See what would run, without running it:{p_end}
 {phang2}. {stata stataqa run, list}{p_end}

@@ -19,7 +19,7 @@ program define stqa_run
     * The positional part is tokenized by hand and only the option tail is
     * handed to -syntax-. This is defect #11: -syntax anything()- mangles a
     * quoted path that carries a drive letter, spaces or slashes, turning
-    * "c:/GitHub/x y/tests" into the token c: and then failing. gettoken
+    * "c:/work/x y/tests" into the token c: and then failing. gettoken
     * honours the quotes, so the path survives whole.
     local path ""
     local targ ""

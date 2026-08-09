@@ -147,6 +147,23 @@ capture noisily stqa_replay using "qa/replay/leaky.do", update
 local rc_r4 = _rc
 global stqa_block_failed ""
 
+* The other side of that contract: it must NOT reject a line that merely looks
+* like an absolute path.  A drive letter is one character, so "PASS:/FAIL:"
+* contains "S:/", and the obvious regex fires on ordinary prose -- which is how
+* the first blessing of this repository's own replay master was refused, over a
+* comment.  Rejecting correct logs is not the safe direction it appears to be:
+* it teaches users to stop believing the contract.  Blessed here in the sandbox,
+* where the manifest is a throwaway.
+quietly {
+    tempname fh
+    file open `fh' using "qa/replay/prose.do", write text replace
+    file write `fh' `"display "the verdict tokens are spelled PASS:/FAIL: in the help""' _n
+    file close `fh'
+}
+capture noisily stqa_replay using "qa/replay/prose.do", update
+local rc_p1 = _rc
+global stqa_block_failed ""
+
 * fixture drift: change the blessed .dta and verify must fail
 quietly {
     use "qa/fixtures/cars.dta", clear
@@ -197,6 +214,36 @@ local n_own  = r(n)
 capture noisily stqa_replay using "qa/replay/pipeline.do"
 local rc_rep = _rc
 
+* verify must have observable behaviour on success. Until 2.3.2 it printed
+* nothing whether or not -quiet- was given: the per-entry line was composed
+* inside a -capture- that swallowed it before it reached the screen or a log,
+* so a caller could not tell a sweep that checked every entry from one that
+* checked none, except by reading r(n). The thing under test is output, so it
+* is captured through a log and counted.
+local vlog "`c(tmpdir)'/stqa_verify_loud.log"
+local qlog "`c(tmpdir)'/stqa_verify_quiet.log"
+capture erase "`vlog'"
+capture erase "`qlog'"
+
+capture log close stqavchk
+quietly log using "`vlog'", replace text name(stqavchk)
+capture noisily stqa_manifest verify
+capture log close stqavchk
+
+capture log close stqavchk
+quietly log using "`qlog'", replace text name(stqavchk)
+capture noisily stqa_manifest verify, quiet
+capture log close stqavchk
+
+local n_loud  = 0
+local n_quiet = 0
+capture {
+    mata: st_local("n_loud",  strofreal(sum(strpos(cat(st_local("vlog")), "manifest ok:") :> 0)))
+    mata: st_local("n_quiet", strofreal(sum(strpos(cat(st_local("qlog")), "manifest ok:") :> 0)))
+}
+capture erase "`vlog'"
+capture erase "`qlog'"
+
 * ---- assertions, from the repo cwd ------------------------------------
 stqa_test DET-12 "blessing writes typed entries and the sweep verifies clean"
     stqa_assert `rc_b1' == 0, msg("blessing the .dta fixture failed (rc `rc_b1')")
@@ -242,6 +289,10 @@ stqa_test REGR-24 "the determinism contract rejects a log that names the tmpdir"
     stqa_assert `rc_r4' == 9, msg("a log carrying a tmpdir path passed the determinism contract (rc `rc_r4')")
 stqa_endtest
 
+stqa_test REGR-26 "the determinism contract accepts prose that looks like a drive path"
+    stqa_assert `rc_p1' == 0, msg("a log whose text merely resembles an absolute path was refused (rc `rc_p1')")
+stqa_endtest
+
 stqa_test DET-17 "the repository's own blessed inputs still verify"
     stqa_assert `rc_own' == 0, msg("the repository's manifest did not verify clean (rc `rc_own')")
     * The count is pinned deliberately. A sweep that quietly checked fewer
@@ -249,6 +300,11 @@ stqa_test DET-17 "the repository's own blessed inputs still verify"
     * checked them all -- the false green this package exists to close. If you
     * bless something new, change this number in the same commit.
     stqa_assert `n_own' == 9, msg("the sweep checked `n_own' entries, expected 9 (7 frozen inputs + the replay pair's do and log)")
+stqa_endtest
+
+stqa_test DET-18 "a clean verify sweep says what it checked, and quiet still says nothing"
+    stqa_assert `n_loud' == 9, msg("verify confirmed `n_loud' entries aloud, expected 9; a sweep with no observable behaviour cannot be distinguished from one that checked nothing")
+    stqa_assert `n_quiet' == 0, msg("quiet printed `n_quiet' per-entry line(s); quiet must stay quiet")
 stqa_endtest
 
 stqa_test REGR-25 "the fixture pipeline still produces the numbers it produced"

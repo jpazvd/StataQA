@@ -164,6 +164,14 @@ program define stqa_manifest, rclass
         file open `in' using "`mf'", read text
         file read `in' line
         while r(eof) == 0 {
+            * The per-entry confirmation is composed inside the capture and
+            * displayed outside it. Displaying it in place produced nothing at
+            * all -- capture suppresses output before it reaches the screen or
+            * a log -- so verify had no observable behaviour on success whether
+            * or not -quiet- was given, and r(n) was the only way to tell the
+            * sweep had run. That is the outer-capture seam this package
+            * documents in stqa_cmdline's help, occurring in its own code.
+            local okmsg ""
             capture {
                 local lt = trim(`"`macval(line)'"')
                 if substr(`"`macval(lt)'"', 1, 1) != "*" & `"`macval(lt)'"' != "" {
@@ -209,11 +217,12 @@ program define stqa_manifest, rclass
                             local badlist `"`badlist' `epath'"'
                         }
                         else if "`quiet'" == "" {
-                            di as txt `"  manifest ok: `etype' `epath'"'
+                            local okmsg `"  manifest ok: `etype' `epath'"'
                         }
                     }
                 }
             }
+            if `"`okmsg'"' != "" di as txt `"`macval(okmsg)'"'
             file read `in' line
         }
         file close `in'
@@ -233,6 +242,11 @@ program define stqa_manifest, rclass
             di as error `"Got: drift -- a fixture that changed since blessing invalidates the tests that consume it"'
             global stqa_block_failed 1
             exit 9
+        }
+        * A sweep that verified nothing and a sweep that verified everything
+        * both returned rc 0 and printed nothing. Say what was checked.
+        if "`quiet'" == "" {
+            di as txt `"  manifest: `nchecked' entr(y/ies) verified"'
         }
         return scalar n = `nchecked'
         exit 0

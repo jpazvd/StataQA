@@ -1,8 +1,8 @@
 ----------------------------------------------------------------------------------------------------
       name:  tourlog
-       log:  C:\tmp\stqa_tourgen\stataqa_tour.log
+       log:  C:\tmp\stqa_tourgen232\stataqa_tour.log
   log type:  text
- opened on:   9 Aug 2026, 05:24:12
+ opened on:   9 Aug 2026, 06:36:52
 
 . do "stataqa_tour.do"
 
@@ -46,7 +46,7 @@
 . capture mkdir "stataqa_tour"
 
 . cd "stataqa_tour"
-C:\tmp\stqa_tourgen\stataqa_tour
+C:\tmp\stqa_tourgen232\stataqa_tour
 
 . 
 . * a true first run every time
@@ -155,6 +155,10 @@ fixture sig 12:6(27261):4045409241:4041443802 . . qa/fixtures/reference.dta
 fixture sum 2361174258 20 . qa/fixtures/config.txt
 
 . stqa_manifest verify
+  manifest ok: fixture qa/fixtures/panel.dta
+  manifest ok: fixture qa/fixtures/reference.dta
+  manifest ok: fixture qa/fixtures/config.txt
+  manifest: 3 entr(y/ies) verified
 
 . 
 . * =====================================================================
@@ -701,11 +705,11 @@ stqa_scanlog: qa/logs/test_suite_stqa.log
 
 . stataqa history using "qa/test_history.txt", check
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  05:24:13 to 05:24:13  (0m 0s)
+  run      : 9 Aug 2026  06:36:52 to 06:36:52  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
-  version  : 2.3.1
+  version  : 2.3.2
   stata    : 17 MP (Windows)
   counts   : 13 run, 12 passed, 0 failed, 1 skipped
   skip notes: INT-02: no credentials in this environment
@@ -734,11 +738,11 @@ skip notes : INT-02: no credentials in this environment
 . * with the absence of a repository.)
 . stataqa validate using "qa/test_history.txt"
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  05:24:13 to 05:24:13  (0m 0s)
+  run      : 9 Aug 2026  06:36:52 to 06:36:52  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
-  version  : 2.3.1
+  version  : 2.3.2
   stata    : 17 MP (Windows)
   counts   : 13 run, 12 passed, 0 failed, 1 skipped
   skip notes: INT-02: no credentials in this environment
@@ -1000,6 +1004,12 @@ stqa_target: target cleared (all tests will run)
 . * the sweep returns the number of entries it checked in r(n); it prints
 . * nothing on success, so report the count
 . stqa_manifest verify
+  manifest ok: fixture qa/fixtures/panel.dta
+  manifest ok: fixture qa/fixtures/reference.dta
+  manifest ok: fixture qa/fixtures/config.txt
+  manifest ok: replay qa/replay/demo.do
+  manifest ok: replay qa/replay/demo.log
+  manifest: 5 entr(y/ies) verified
 
 . di as text "manifest sweep: " r(n) " blessed file(s) verified"
 manifest sweep: 5 blessed file(s) verified
@@ -1028,7 +1038,7 @@ end of do-file
 
 . log close tourlog
       name:  tourlog
-       log:  C:\tmp\stqa_tourgen\stataqa_tour.log
+       log:  C:\tmp\stqa_tourgen232\stataqa_tour.log
   log type:  text
- closed on:   9 Aug 2026, 05:24:13
+ closed on:   9 Aug 2026, 06:36:52
 ----------------------------------------------------------------------------------------------------

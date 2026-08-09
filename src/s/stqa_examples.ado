@@ -15,6 +15,21 @@ program define stqa_examples, rclass
     version 14.0
 
     if "$stqa_skip_block" == "1" {
+        * A no-op still owes the caller a complete result set. Returning
+        * nothing leaves r(n_found) MISSING, and a caller that then writes
+        * -forvalues i = 1/`n'- gets -forvalues i = 1/.-, which is r(198) and
+        * takes the whole FILE with it. The visible symptom is that asking for
+        * one test id kills every test in that file, with an error naming
+        * neither the id nor this command. Measured 09aug2026 against this
+        * package's own qa/test_docs.do, where it had been latent since the
+        * file was written.
+        return scalar n_found   = 0
+        return scalar n_run     = 0
+        return scalar n_skipped = 0
+        return scalar n_failed  = 0
+        return local  source    ""
+        return local  skipped   ""
+        return local  failed    ""
         exit 0
     }
 

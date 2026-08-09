@@ -208,12 +208,47 @@ void stqa_replay_scan(string scalar f, string scalar tmp)
             return
         }
         // drive-absolute path: X:\ or X:/
-        if (regexm(s, "[A-Za-z]:[/\\]")) {
+        if (stqa_replay_drivepath(s)) {
             st_local("viol", strofreal(i))
             return
         }
     }
     st_local("viol", "0")
+}
+
+real scalar stqa_replay_drivepath(string scalar s)
+{
+    // Does the line contain a Windows drive-absolute path?
+    //
+    // The obvious test, regexm(s, "[A-Za-z]:[/\]"), also matches ordinary
+    // prose that joins two words with a slash -- "PASS:/FAIL:" contains "S:/"
+    // -- and a log is arbitrary text. Measured 09aug2026: the first blessing
+    // of this repository's own qa/replay/pipeline.do was refused because a
+    // COMMENT in it named the two verdict tokens that way. The refusal was
+    // conservative rather than false-green, but a contract that rejects
+    // correct logs teaches its users to stop believing it.
+    //
+    // A drive letter is exactly one character, so whatever precedes it cannot
+    // be a word character. That single extra condition removes the prose case
+    // and keeps every real path, including quoted ones and paths at the start
+    // of a line.
+    real scalar   i, n
+    string scalar c, prev, pre2
+
+    n = strlen(s)
+    for (i = 2; i <= n - 1; i++) {
+        if (substr(s, i, 1) != ":") continue
+        c = substr(s, i + 1, 1)
+        if (c != "/" & c != "\") continue
+        prev = substr(s, i - 1, 1)
+        if (!regexm(prev, "^[A-Za-z]$")) continue
+        if (i >= 3) {
+            pre2 = substr(s, i - 2, 1)
+            if (regexm(pre2, "^[A-Za-z0-9_]$")) continue
+        }
+        return(1)
+    }
+    return(0)
 }
 
 string scalar stqa_replay_norm(string scalar s)

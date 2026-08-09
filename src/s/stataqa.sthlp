@@ -32,7 +32,7 @@
 rest of the command line to the matching {cmd:stqa_}{it:name} command {bf:verbatim}, so a
 quoted absolute path survives intact:
 
-{phang2}. {stata `"stataqa run "c:/GitHub/my project/tests", pattern("test_*.do")"'}{p_end}
+{phang2}. {stata `"stataqa run "c:/work/my project/tests", pattern("test_*.do")"'}{p_end}
 
 {pstd}
 Every subcommand also lives in its own ado-file and can therefore be called directly
