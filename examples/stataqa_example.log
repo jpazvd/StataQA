@@ -1,8 +1,8 @@
--------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
       name:  exlog
        log:  C:\tmp\stqa_exgen\stataqa_example.log
   log type:  text
- opened on:   8 Aug 2026, 14:06:28
+ opened on:   9 Aug 2026, 05:24:48
 
 . do "stataqa_example.do"
 
@@ -23,16 +23,11 @@
 . clear all
 
 . 
-. * ---- Everything is written under ./stataqa_example/, created here, so the -
-> ---
-. * ---- script runs wherever it is placed and leaves the reader's own files  -
-> ---
-. * ---- alone.  Only relative paths are used, so nothing in the log names    -
-> ---
-. * ---- this machine.  The tree is cleared first, so a second run reproduces -
-> ---
-. * ---- the first rather than reporting leftovers from it.                   -
-> ---
+. * ---- Everything is written under ./stataqa_example/, created here, so the ----
+. * ---- script runs wherever it is placed and leaves the reader's own files  ----
+. * ---- alone.  Only relative paths are used, so nothing in the log names    ----
+. * ---- this machine.  The tree is cleared first, so a second run reproduces ----
+. * ---- the first rather than reporting leftovers from it.                   ----
 . capture mkdir "stataqa_example"
 
 . cd "stataqa_example"
@@ -73,8 +68,7 @@ Created sample test file: demo_tests/test_example.do
 . file open `fh' using "demo_tests/test_demo.do", write text replace
 (file demo_tests/test_demo.do not found)
 
-. file write `fh' `"stqa_test SMOKE-01 "a computed statistic matches its expect
-> ed value""' _n
+. file write `fh' `"stqa_test SMOKE-01 "a computed statistic matches its expected value""' _n
 
 . file write `fh' `"    sysuse auto, clear"' _n
 
@@ -98,13 +92,12 @@ Created sample test file: demo_tests/test_example.do
 
 . file write `fh' `""' _n
 
-. file write `fh' `"stqa_test EDGE-01 "a false assertion is caught, not absorbe
-> d""' _n
+. file write `fh' `"stqa_test EDGE-01 "a false assertion is caught, not absorbed""' _n
 
 . file write `fh' `"    sysuse auto, clear"' _n
 
-. file write `fh' `"    capture stqa_assert price < 0, msg("prices are not nega
-> tive; this failure is deliberate")"' _n
+. file write `fh' `"    capture stqa_assert price < 0, msg("prices are not negative; this failure is
+>  deliberate")"' _n
 
 . file write `fh' `"    local rc = _rc"' _n
 
@@ -118,8 +111,7 @@ Created sample test file: demo_tests/test_example.do
 
 . 
 . * ---------------------------------------------------------------------------
-. * 3. Certify the suite: the verdict is read out of the per-file log, and a st
-> anza
+. * 3. Certify the suite: the verdict is read out of the per-file log, and a stanza
 . *    is appended to the certification ledger qa/test_history.txt
 . * ---------------------------------------------------------------------------
 . stataqa certify demo_tests
@@ -161,8 +153,7 @@ PASS: DATA-01 the identifier is unique
 .     sysuse auto, clear
 (1978 automobile data)
 
-.     capture stqa_assert price < 0, msg("prices are not negative; this failure
->  is deliberate")
+.     capture stqa_assert price < 0, msg("prices are not negative; this failure is deliberate")
 
 .     local rc = _rc
 
@@ -189,8 +180,8 @@ Running: demo_tests/test_example.do
 . 
 . stqa_test example_arith "Basic arithmetic"
 [TEST] example_arith: Basic arithmetic
-note: test id example_arith is not FAMILY-NN (for example DET-01); stable, sema
-> ntic ids are what keep a certification ledger readable
+note: test id example_arith is not FAMILY-NN (for example DET-01); stable, semantic ids are what kee
+> p a certification ledger readable
       further ids outside the taxonomy are not reported again in this run
 
 .     assert 1 + 1 == 2
@@ -211,12 +202,9 @@ stataqa summary  (2 file(s), 4 check(s), 0.000s)
   files : 2 passed, 0 failed, 0 not completed, 0 skipped
   checks: 4 passed, 0 failed, 0 skipped
     family     run  passed  failed  skipped  meaning
-    SMOKE        1       1       0        0  Smoke tests: the package loads and
->  its
-    DATA         1       1       0        0  Data structure: variable types, va
-> lue 
-    EDGE         1       1       0        0  Edge cases: N=1, empty results, sp
-> ecia
+    SMOKE        1       1       0        0  Smoke tests: the package loads and its
+    DATA         1       1       0        0  Data structure: variable types, value 
+    EDGE         1       1       0        0  Edge cases: N=1, empty results, specia
     _other       1       1       0        0  ids outside the FAMILY-NN taxonomy
 ----------------------------------------------------------------
 stqa_history: no git repository here; branch and commit recorded as absent
@@ -230,11 +218,11 @@ ALL CHECKS PASSED (4 checks)
 . * ---------------------------------------------------------------------------
 . stataqa history, check
 stqa_history (check): qa/test_history.txt
-  run      : 8 Aug 2026  14:06:28 to 14:06:28  (0m 0s)
+  run      : 9 Aug 2026  05:24:48 to 05:24:48  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
-  version  : 2.3.0
+  version  : 2.3.1
   stata    : 17 MP (Windows)
   counts   : 4 run, 4 passed, 0 failed, 0 skipped
   notes    : path=demo_tests pattern=test*.do
@@ -307,8 +295,7 @@ stqa_examples: 2 found, 2 run, 0 skipped, 0 failed
 . capture noisily stqa_assert price < 0 if foreign == 99, null
 FAIL: ADHOC assertion outside a test block
 Expected: price < 0 if foreign == 99
-Got: the qualifier selected zero observations; nothing was verified (assert ret
-> urned rc = 8)
+Got: the qualifier selected zero observations; nothing was verified (assert returned rc = 8)
 
 . di as txt "rc = " _rc "  (9: the empty selection was caught, not passed)"
 rc = 9  (9: the empty selection was caught, not passed)
@@ -320,5 +307,5 @@ end of do-file
       name:  exlog
        log:  C:\tmp\stqa_exgen\stataqa_example.log
   log type:  text
- closed on:   8 Aug 2026, 14:06:28
--------------------------------------------------------------------------------
+ closed on:   9 Aug 2026, 05:24:48
+----------------------------------------------------------------------------------------------------

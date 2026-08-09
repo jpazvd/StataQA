@@ -299,10 +299,14 @@ stataqa scanlog "qa/logs/test_suite_stqa.log"
 stataqa history using "qa/test_history.txt", check
 stataqa report
 
-* validate judges the record: green, self-consistent, and pinned to this
-* commit. nofresh drops the freshness check, which is right here because
-* this scratch directory is not a git repository.
-stataqa validate using "qa/test_history.txt", nofresh
+* validate judges the record without running anything: a stanza exists, it is
+* green with its sentinel, its own arithmetic reconciles, and no certified
+* file has changed since it was written. The fourth check needs git, so here
+* -- in a scratch directory that is not a repository -- it reports that the
+* question cannot be answered rather than answering it in the affirmative.
+* (nofresh would suppress that check deliberately; it is not needed to cope
+* with the absence of a repository.)
+stataqa validate using "qa/test_history.txt"
 
 * =====================================================================
 * 9. Targeting: the catalog, one test by name, and the interactive form.
