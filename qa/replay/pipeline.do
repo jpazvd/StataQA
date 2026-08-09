@@ -29,6 +29,14 @@
 * bad one) and is logged for the next package revision.
 * Author: Joao Pedro Azevedo (UNICEF)
 
+* The stages write into gitignored scratch, which therefore does not exist in a
+* fresh clone. test_pipeline.do creates it -- but it runs AFTER test_manifest.do
+* alphabetically, so leaning on that neighbour makes this master pass in a tree
+* that has run the suite before and fail on any clean checkout. It did exactly
+* that: green here, r(603) on the public clone. A golden master that depends on
+* the order its neighbours happen to run in is not a golden master.
+capture mkdir "qa/fixtures/pipeline/output"
+
 quietly do "qa/fixtures/pipeline/01_import.do"
 quietly do "qa/fixtures/pipeline/02_clean.do"
 quietly do "qa/fixtures/pipeline/03_construct.do"

@@ -7,5 +7,5 @@ fixture sum 2564140564 391 . qa/fixtures/ledgers/yaml.txt
 fixture sum 4188754392 538 . qa/fixtures/pipeline/01_import.do
 fixture sum 3546078387 172 . qa/fixtures/pipeline/02_clean.do
 fixture sum 1638443559 184 . qa/fixtures/pipeline/03_construct.do
-replay sum 1112692919 2438 17 qa/replay/pipeline.do
-replay sum 4016401696 2747 17 qa/replay/pipeline.log
+replay sum 149489283 2951 17 qa/replay/pipeline.do
+replay sum 3248449324 3289 17 qa/replay/pipeline.log
