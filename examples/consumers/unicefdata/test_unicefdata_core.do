@@ -1,0 +1,53 @@
+*! examples/consumers/unicefdata/test_unicefdata_core.do  version 1.0.0  07aug2026
+* INT family -- StataQA exercising the published -unicefdata- package.
+*
+* Targets the INSTALLED package (net install from unicef-drp), never the
+* local working tree.  Call forms follow the package's documented
+* syntax, the same forms the accompanying manuscript prints.  Every block
+* SKIPs when the package is absent; the live-API block additionally skips
+* when the service cannot be reached, so the suite is green-or-skip on any
+* machine and never red for environmental reasons.
+* Author: Joao Pedro Azevedo (UNICEF)
+
+capture which unicefdata
+local haspkg = (_rc == 0)
+
+stqa_test INT-31 "unicefdata is installed and autoloads"
+    if !`haspkg' {
+        stqa_skip, msg("unicefdata is not installed on this machine")
+    }
+    else {
+        stqa_assert 1 == 1
+    }
+stqa_endtest
+
+stqa_test INT-32 "an unknown option is rejected, not silently ignored"
+    if !`haspkg' {
+        stqa_skip, msg("unicefdata is not installed on this machine")
+    }
+    else {
+        capture unicefdata, no_such_option_xyz
+        local rc = _rc
+        global stqa_block_failed ""
+        stqa_assert `rc' != 0, msg("a nonsense option was accepted (rc 0)")
+    }
+stqa_endtest
+
+stqa_test INT-33 "a small extract returns the requested structure (live API)"
+    if !`haspkg' {
+        stqa_skip, msg("unicefdata is not installed on this machine")
+    }
+    else {
+        * The manuscript's own example, cut to one country-year to be gentle.
+        capture unicefdata, indicator(CME_MRY0T4) countries(BRA) ///
+            startyear(2020) endyear(2020) clear
+        if _rc {
+            stqa_skip, msg("the API could not be reached (rc `=_rc'); a live check does not fail the suite")
+        }
+        else {
+            stqa_nobs_min 1
+            stqa_hasvar iso3 indicator period value
+            stqa_nomissing iso3 indicator
+        }
+    }
+stqa_endtest

@@ -1,0 +1,324 @@
+-------------------------------------------------------------------------------
+      name:  exlog
+       log:  C:\tmp\stqa_exgen\stataqa_example.log
+  log type:  text
+ opened on:   8 Aug 2026, 14:06:28
+
+. do "stataqa_example.do"
+
+. *! stataqa_example.do  version 1.0.0  07aug2026
+. * The worked example accompanying
+. *   Azevedo, J. P.  stataqa: Local certification and license-aware
+. *   continuous integration for Stata packages.
+. *
+. * Runs out of the box, from any directory, with stataqa installed:
+. *   . do stataqa_example.do
+. * No directories need to be created in advance, no paths are edited, no timer
+. * is set, and nothing here touches the network.  The log shipped alongside
+. * this file (stataqa_example.log) was produced by exactly this script.
+. * Author: Joao Pedro Azevedo (UNICEF)
+. 
+. version 14.0
+
+. clear all
+
+. 
+. * ---- Everything is written under ./stataqa_example/, created here, so the -
+> ---
+. * ---- script runs wherever it is placed and leaves the reader's own files  -
+> ---
+. * ---- alone.  Only relative paths are used, so nothing in the log names    -
+> ---
+. * ---- this machine.  The tree is cleared first, so a second run reproduces -
+> ---
+. * ---- the first rather than reporting leftovers from it.                   -
+> ---
+. capture mkdir "stataqa_example"
+
+. cd "stataqa_example"
+C:\tmp\stqa_exgen\stataqa_example
+
+. 
+. capture erase "demo_tests/test_demo.do"
+
+. capture erase "demo_tests/test_example.do"
+
+. capture erase "demo_tests/logs/test_demo_stqa.log"
+
+. capture erase "demo_tests/logs/test_example_stqa.log"
+
+. capture erase "qa/test_history.txt"
+
+. capture erase "demo_help.sthlp"
+
+. capture erase "demo_gallery.ado"
+
+. 
+. * ---------------------------------------------------------------------------
+. * 1. Scaffold a test tree
+. * ---------------------------------------------------------------------------
+. stataqa init demo_tests
+Test directory ready: demo_tests
+Log directory ready: demo_tests/logs
+Created sample test file: demo_tests/test_example.do
+
+. 
+. * ---------------------------------------------------------------------------
+. * 2. Write a test file: three blocks, the third exercising the FAILURE path
+. *    (it captures a deliberately false assertion and asserts the rc, so the
+. *    suite proves red CAN fire and still certifies green)
+. * ---------------------------------------------------------------------------
+. tempname fh
+
+. file open `fh' using "demo_tests/test_demo.do", write text replace
+(file demo_tests/test_demo.do not found)
+
+. file write `fh' `"stqa_test SMOKE-01 "a computed statistic matches its expect
+> ed value""' _n
+
+. file write `fh' `"    sysuse auto, clear"' _n
+
+. file write `fh' `"    quietly summarize price"' _n
+
+. file write `fh' `"    local mean = r(mean)"' _n
+
+. file write `fh' `"    stqa_approx \`mean' 6165.2568, tolerance(0.01)"' _n
+
+. file write `fh' `"stqa_endtest"' _n
+
+. file write `fh' `""' _n
+
+. file write `fh' `"stqa_test DATA-01 "the identifier is unique""' _n
+
+. file write `fh' `"    sysuse auto, clear"' _n
+
+. file write `fh' `"    stqa_uniqueid make"' _n
+
+. file write `fh' `"stqa_endtest"' _n
+
+. file write `fh' `""' _n
+
+. file write `fh' `"stqa_test EDGE-01 "a false assertion is caught, not absorbe
+> d""' _n
+
+. file write `fh' `"    sysuse auto, clear"' _n
+
+. file write `fh' `"    capture stqa_assert price < 0, msg("prices are not nega
+> tive; this failure is deliberate")"' _n
+
+. file write `fh' `"    local rc = _rc"' _n
+
+. file write `fh' `"    global stqa_block_failed"' _n
+
+. file write `fh' `"    stqa_assert \`rc' == 9"' _n
+
+. file write `fh' `"stqa_endtest"' _n
+
+. file close `fh'
+
+. 
+. * ---------------------------------------------------------------------------
+. * 3. Certify the suite: the verdict is read out of the per-file log, and a st
+> anza
+. *    is appended to the certification ledger qa/test_history.txt
+. * ---------------------------------------------------------------------------
+. stataqa certify demo_tests
+stataqa run: 2 file(s) in demo_tests matching test*.do
+----------------------------------------------------------------
+Running: demo_tests/test_demo.do
+
+. stqa_test SMOKE-01 "a computed statistic matches its expected value"
+[TEST] SMOKE-01: a computed statistic matches its expected value
+
+.     sysuse auto, clear
+(1978 automobile data)
+
+.     quietly summarize price
+
+.     local mean = r(mean)
+
+.     stqa_approx `mean' 6165.2568, tolerance(0.01)
+
+. stqa_endtest
+PASS: SMOKE-01 a computed statistic matches its expected value
+
+. 
+. stqa_test DATA-01 "the identifier is unique"
+[TEST] DATA-01: the identifier is unique
+
+.     sysuse auto, clear
+(1978 automobile data)
+
+.     stqa_uniqueid make
+
+. stqa_endtest
+PASS: DATA-01 the identifier is unique
+
+. 
+. stqa_test EDGE-01 "a false assertion is caught, not absorbed"
+[TEST] EDGE-01: a false assertion is caught, not absorbed
+
+.     sysuse auto, clear
+(1978 automobile data)
+
+.     capture stqa_assert price < 0, msg("prices are not negative; this failure
+>  is deliberate")
+
+.     local rc = _rc
+
+.     global stqa_block_failed
+
+.     stqa_assert `rc' == 9
+
+. stqa_endtest
+PASS: EDGE-01 a false assertion is caught, not absorbed
+
+. 
+end of do-file
+stqa_scanlog: demo_tests/logs/test_demo_stqa.log
+  passed   : 3
+  failed   : 0
+  skipped  : 0
+  sentinel : found (the suite ran to completion)
+PASS: test_demo 3 check(s) passed
+----------------------------------------------------------------
+Running: demo_tests/test_example.do
+
+. *! Example stataqa test file
+. * Run the suite with:  stataqa run
+. 
+. stqa_test example_arith "Basic arithmetic"
+[TEST] example_arith: Basic arithmetic
+note: test id example_arith is not FAMILY-NN (for example DET-01); stable, sema
+> ntic ids are what keep a certification ledger readable
+      further ids outside the taxonomy are not reported again in this run
+
+.     assert 1 + 1 == 2
+
+. stqa_endtest
+PASS: example_arith Basic arithmetic
+
+. 
+end of do-file
+stqa_scanlog: demo_tests/logs/test_example_stqa.log
+  passed   : 1
+  failed   : 0
+  skipped  : 0
+  sentinel : found (the suite ran to completion)
+PASS: test_example 1 check(s) passed
+----------------------------------------------------------------
+stataqa summary  (2 file(s), 4 check(s), 0.000s)
+  files : 2 passed, 0 failed, 0 not completed, 0 skipped
+  checks: 4 passed, 0 failed, 0 skipped
+    family     run  passed  failed  skipped  meaning
+    SMOKE        1       1       0        0  Smoke tests: the package loads and
+>  its
+    DATA         1       1       0        0  Data structure: variable types, va
+> lue 
+    EDGE         1       1       0        0  Edge cases: N=1, empty results, sp
+> ecia
+    _other       1       1       0        0  ids outside the FAMILY-NN taxonomy
+----------------------------------------------------------------
+stqa_history: no git repository here; branch and commit recorded as absent
+stqa_history: appended to qa/test_history.txt
+  result   : GATE GREEN
+ALL CHECKS PASSED (4 checks)
+
+. 
+. * ---------------------------------------------------------------------------
+. * 4. Read the record back, the way CI pattern B would
+. * ---------------------------------------------------------------------------
+. stataqa history, check
+stqa_history (check): qa/test_history.txt
+  run      : 8 Aug 2026  14:06:28 to 14:06:28  (0m 0s)
+  branch   : (not a git repository)
+  commit   : (not a git repository)
+  dirty    : (not a git repository)
+  version  : 2.3.0
+  stata    : 17 MP (Windows)
+  counts   : 4 run, 4 passed, 0 failed, 0 skipped
+  notes    : path=demo_tests pattern=test*.do
+  verdict  : GATE GREEN
+
+. 
+. * ---------------------------------------------------------------------------
+. * 5. Documentation as tests: stqa_examples in both of its modes.
+. *    A help file's clickable {stata ...} directives are harvested and run;
+. *    an examples gallery's named programs are harvested with the gallery's
+. *    own entry point excluded.
+. * ---------------------------------------------------------------------------
+. file open `fh' using "demo_help.sthlp", write text replace
+(file demo_help.sthlp not found)
+
+. file write `fh' "{smcl}" _n
+
+. file write `fh' "{title:Examples}" _n
+
+. file write `fh' "{phang2}{cmd:.} {stata sysuse auto, clear}{p_end}" _n
+
+. file write `fh' "{phang2}{cmd:.} {stata summarize price}{p_end}" _n
+
+. file close `fh'
+
+. stqa_examples using "demo_help.sthlp"
+
+stqa_examples: 2 found, 2 run, 0 skipped, 0 failed
+  source: demo_help.sthlp
+
+. 
+. file open `fh' using "demo_gallery.ado", write text replace
+(file demo_gallery.ado not found)
+
+. file write `fh' "program demo_gallery" _n
+
+. file write `fh' "    args EXAMPLE" _n
+
+. file write `fh' "    \`EXAMPLE'" _n
+
+. file write `fh' "end" _n
+
+. file write `fh' "program example01" _n
+
+. file write `fh' `"    display "gallery example one""' _n
+
+. file write `fh' "end" _n
+
+. file write `fh' "program example02" _n
+
+. file write `fh' `"    display "gallery example two""' _n
+
+. file write `fh' "end" _n
+
+. file close `fh'
+
+. stqa_examples using "demo_gallery.ado"
+
+stqa_examples: 2 found, 2 run, 0 skipped, 0 failed
+  source: demo_gallery.ado
+
+. 
+. * ---------------------------------------------------------------------------
+. * 6. The vacuity guard: a false assertion over an empty selection passes
+. *    vacuously under plain assert semantics; -null- makes it fail
+. * ---------------------------------------------------------------------------
+. sysuse auto, clear
+(1978 automobile data)
+
+. capture noisily stqa_assert price < 0 if foreign == 99, null
+FAIL: ADHOC assertion outside a test block
+Expected: price < 0 if foreign == 99
+Got: the qualifier selected zero observations; nothing was verified (assert ret
+> urned rc = 8)
+
+. di as txt "rc = " _rc "  (9: the empty selection was caught, not passed)"
+rc = 9  (9: the empty selection was caught, not passed)
+
+. 
+end of do-file
+
+. log close exlog
+      name:  exlog
+       log:  C:\tmp\stqa_exgen\stataqa_example.log
+  log type:  text
+ closed on:   8 Aug 2026, 14:06:28
+-------------------------------------------------------------------------------

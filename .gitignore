@@ -4,6 +4,11 @@
 qa/logs/
 qa/fixtures/pipeline/output/
 
+# ...but the example logs ARE shipped: an example without the log it produced
+# cannot be checked against what it claims. Both depths are needed.
+!examples/*.log
+!examples/**/logs/*.log
+
 # The SSC submission zip is built from src/s/ at release time and mailed, not
 # distributed from here. Committing it would leave a copy that goes stale the
 # moment src/ changes while still claiming to be what was submitted.
