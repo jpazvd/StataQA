@@ -1,6 +1,6 @@
-v 2.4.0
+v 2.5.0
 d 'stataqa': Lightweight testing and CI framework for Stata
-d Distribution-Date: 09Aug2026
+d Distribution-Date: 10Aug2026
 d Author: Joao Pedro Azevedo (UNICEF)
 d Requires: Stata 14
 d URL: https://github.com/jpazvd/StataQA

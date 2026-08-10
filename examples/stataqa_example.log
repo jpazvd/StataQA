@@ -2,7 +2,7 @@
       name:  exlog
        log:  C:\tmp\stqa_exgenban\stataqa_example.log
   log type:  text
- opened on:   9 Aug 2026, 20:29:54
+ opened on:  10 Aug 2026, 10:04:03
 
 . do "stataqa_example.do"
 
@@ -81,7 +81,7 @@
 . }
 
 . display "stataqa version : `stqaver'"
-stataqa version : 2.4.0
+stataqa version : 2.5.0
 
 . 
 . * ---- Everything is written under ./stataqa_example/, created here, so the ----
@@ -179,6 +179,7 @@ Created sample test file: demo_tests/test_example.do
 stataqa run: 2 file(s) in demo_tests matching test*.do
 ----------------------------------------------------------------
 Running: demo_tests/test_demo.do
+STATAQA LOG 2.5.0
 
 . stqa_test SMOKE-01 "a computed statistic matches its expected value"
 [TEST] SMOKE-01: a computed statistic matches its expected value
@@ -232,9 +233,11 @@ stqa_scanlog: demo_tests/logs/test_demo_stqa.log
   failed   : 0
   skipped  : 0
   sentinel : found (the suite ran to completion)
+  written by: stataqa 2.5.0
 PASS: test_demo 3 check(s) passed
 ----------------------------------------------------------------
 Running: demo_tests/test_example.do
+STATAQA LOG 2.5.0
 
 . *! Example stataqa test file
 . * Run the suite with:  stataqa run
@@ -257,6 +260,7 @@ stqa_scanlog: demo_tests/logs/test_example_stqa.log
   failed   : 0
   skipped  : 0
   sentinel : found (the suite ran to completion)
+  written by: stataqa 2.5.0
 PASS: test_example 1 check(s) passed
 ----------------------------------------------------------------
 stataqa summary  (2 file(s), 4 check(s), 0.000s)
@@ -279,11 +283,11 @@ ALL CHECKS PASSED (4 checks)
 . * ---------------------------------------------------------------------------
 . stataqa history, check
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  20:29:54 to 20:29:54  (0m 0s)
+  run      : 10 Aug 2026  10:04:03 to 10:04:03  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
-  version  : 2.4.0
+  version  : 2.5.0
   stata    : 17 MP (Windows)
   counts   : 4 run, 4 passed, 0 failed, 0 skipped
   notes    : path=demo_tests pattern=test*.do
@@ -368,5 +372,5 @@ end of do-file
       name:  exlog
        log:  C:\tmp\stqa_exgenban\stataqa_example.log
   log type:  text
- closed on:   9 Aug 2026, 20:29:54
+ closed on:  10 Aug 2026, 10:04:03
 ----------------------------------------------------------------------------------------------------
