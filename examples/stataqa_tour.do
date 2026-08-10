@@ -409,11 +409,18 @@ global stqa_block_failed ""
 *     stqa_pass there would put a second PASS: in the log for one block
 *     and the summary's arithmetic would stop reconciling.
 * =====================================================================
+*     The affirmative is conditioned on what the loop found, not on some
+*     neighbouring fact. Keyed on anything else -- _N > 0, say -- a run with a
+*     missing column would emit a FAIL: for that column and a PASS: for the
+*     same inventory, and the log would assert both.
 sysuse auto, clear
+local missing 0
 foreach v in price mpg weight {
     capture confirm variable `v'
+    if _rc local ++missing
     stqa_fail if _rc, id(INVENTORY) msg("`v' is missing from the inventory")
 }
-stqa_pass if _N > 0, id(INVENTORY) msg("all three columns present over `=_N' rows")
+stqa_pass if `missing' == 0, id(INVENTORY) ///
+    msg("all three columns present over `=_N' rows")
 
 di _n as result "STATAQA TOUR COMPLETE"
