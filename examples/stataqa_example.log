@@ -2,7 +2,7 @@
       name:  exlog
        log:  C:\tmp\stqa_exgenban\stataqa_example.log
   log type:  text
- opened on:   9 Aug 2026, 20:21:39
+ opened on:   9 Aug 2026, 20:29:54
 
 . do "stataqa_example.do"
 
@@ -279,7 +279,7 @@ ALL CHECKS PASSED (4 checks)
 . * ---------------------------------------------------------------------------
 . stataqa history, check
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  20:21:39 to 20:21:39  (0m 0s)
+  run      : 9 Aug 2026  20:29:54 to 20:29:54  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
@@ -368,5 +368,5 @@ end of do-file
       name:  exlog
        log:  C:\tmp\stqa_exgenban\stataqa_example.log
   log type:  text
- closed on:   9 Aug 2026, 20:21:39
+ closed on:   9 Aug 2026, 20:29:54
 ----------------------------------------------------------------------------------------------------

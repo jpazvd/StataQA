@@ -408,11 +408,12 @@ global stqa_block_failed ""
 *     Inside an open block stqa_endtest does the counting -- so a
 *     stqa_pass there would put a second PASS: in the log for one block
 *     and the summary's arithmetic would stop reconciling.
+*
+*     The affirmative is conditioned on what the loop found, not on a
+*     neighbouring fact. Keyed on anything else -- _N > 0, say -- a run
+*     with a missing column would emit a FAIL: for that column and a
+*     PASS: for the same inventory, and the log would assert both.
 * =====================================================================
-*     The affirmative is conditioned on what the loop found, not on some
-*     neighbouring fact. Keyed on anything else -- _N > 0, say -- a run with a
-*     missing column would emit a FAIL: for that column and a PASS: for the
-*     same inventory, and the log would assert both.
 sysuse auto, clear
 local missing 0
 foreach v in price mpg weight {

@@ -2,7 +2,7 @@
       name:  tourlog
        log:  C:\tmp\stqa_tourgenban\stataqa_tour.log
   log type:  text
- opened on:   9 Aug 2026, 20:21:38
+ opened on:   9 Aug 2026, 20:29:53
 
 . do "stataqa_tour.do"
 
@@ -487,7 +487,7 @@ stqa_scanlog: qa/logs/test_suite_stqa.log
   sentinel : found (the suite ran to completion)
 PASS: test_suite 12 check(s) passed
 ----------------------------------------------------------------
-stataqa summary  (1 file(s), 13 check(s), 0.000s)
+stataqa summary  (1 file(s), 13 check(s), 1.000s)
   files : 1 passed, 0 failed, 0 not completed, 0 skipped
   checks: 12 passed, 0 failed, 1 skipped
     family     run  passed  failed  skipped  meaning
@@ -766,7 +766,7 @@ stqa_scanlog: qa/logs/test_suite_stqa.log
 
 . stataqa history using "qa/test_history.txt", check
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  20:21:39 to 20:21:39  (0m 0s)
+  run      : 9 Aug 2026  20:29:54 to 20:29:54  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
@@ -799,7 +799,7 @@ skip notes : INT-02: no credentials in this environment
 . * with the absence of a repository.)
 . stataqa validate using "qa/test_history.txt"
 stqa_history (check): qa/test_history.txt
-  run      : 9 Aug 2026  20:21:39 to 20:21:39  (0m 0s)
+  run      : 9 Aug 2026  20:29:54 to 20:29:54  (0m 0s)
   branch   : (not a git repository)
   commit   : (not a git repository)
   dirty    : (not a git repository)
@@ -1107,11 +1107,12 @@ drifted fixture -> rc = 9  (9: the change was caught)
 . *     Inside an open block stqa_endtest does the counting -- so a
 . *     stqa_pass there would put a second PASS: in the log for one block
 . *     and the summary's arithmetic would stop reconciling.
+. *
+. *     The affirmative is conditioned on what the loop found, not on a
+. *     neighbouring fact. Keyed on anything else -- _N > 0, say -- a run
+. *     with a missing column would emit a FAIL: for that column and a
+. *     PASS: for the same inventory, and the log would assert both.
 . * =====================================================================
-. *     The affirmative is conditioned on what the loop found, not on some
-. *     neighbouring fact. Keyed on anything else -- _N > 0, say -- a run with a
-. *     missing column would emit a FAIL: for that column and a PASS: for the
-. *     same inventory, and the log would assert both.
 . sysuse auto, clear
 (1978 automobile data)
 
@@ -1139,5 +1140,5 @@ end of do-file
       name:  tourlog
        log:  C:\tmp\stqa_tourgenban\stataqa_tour.log
   log type:  text
- closed on:   9 Aug 2026, 20:21:39
+ closed on:   9 Aug 2026, 20:29:54
 ----------------------------------------------------------------------------------------------------
