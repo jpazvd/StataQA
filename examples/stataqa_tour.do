@@ -391,4 +391,37 @@ capture stqa_manifest verify using "qa/fixtures/panel.dta", quiet
 di as text "drifted fixture -> rc = " _rc "  (9: the change was caught)"
 global stqa_block_failed ""
 
+* =====================================================================
+* 12. Reporting a whole inventory. stqa_assert stops the block at the
+*     first failure, which is right for a precondition and wrong for an
+*     inventory: a check confirming forty files should name every missing
+*     one, not the first and then nothing. The two emitters book a
+*     verdict and return control instead, so a loop can report each row.
+*
+*     Every row below is good, so stqa_fail books nothing -- a log that
+*     must stay green cannot demonstrate the multi-failure case, which is
+*     ERR-16 in the package's own suite. What is shown here is the idiom:
+*     the emitters are guarded by an -if- evaluated as a scalar, so the
+*     loop decides per row.
+*
+*     Used outside a test block, as here, each emitter counts itself.
+*     Inside an open block stqa_endtest does the counting -- so a
+*     stqa_pass there would put a second PASS: in the log for one block
+*     and the summary's arithmetic would stop reconciling.
+*
+*     The affirmative is conditioned on what the loop found, not on a
+*     neighbouring fact. Keyed on anything else -- _N > 0, say -- a run
+*     with a missing column would emit a FAIL: for that column and a
+*     PASS: for the same inventory, and the log would assert both.
+* =====================================================================
+sysuse auto, clear
+local missing 0
+foreach v in price mpg weight {
+    capture confirm variable `v'
+    if _rc local ++missing
+    stqa_fail if _rc, id(INVENTORY) msg("`v' is missing from the inventory")
+}
+stqa_pass if `missing' == 0, id(INVENTORY) ///
+    msg("all three columns present over `=_N' rows")
+
 di _n as result "STATAQA TOUR COMPLETE"
