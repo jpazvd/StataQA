@@ -124,6 +124,10 @@ stripped before the line-initial test is applied.
 {synopt:{cmd:r(done)}}1 if the completion sentinel was found, 0 otherwise{p_end}
 {synopt:{cmd:r(counted)}}failures counted from line-initial tokens{p_end}
 {synopt:{cmd:r(declared)}}failures declared by the closing sentinel{p_end}
+{synopt:{cmd:r(logsupported)}}1 if the version in {cmd:r(logversion)} is one this
+scanner claims to read, 0 if it falls outside that window or is not a version at
+all. A log with no version at all is supported: it predates the format header and
+is read by its verdict tokens{p_end}
 {synopt:{cmd:r(stataqa)}}1 if the log carries any marker only {cmd:stataqa} writes
 (a verdict token, a completion sentinel, or the version watermark), 0 if it
 carries none. A log with no markers may still be a genuine run that died

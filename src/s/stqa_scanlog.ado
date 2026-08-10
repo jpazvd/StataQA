@@ -9,8 +9,10 @@
 *          runners use -using- because that is the convention the other
 *          seven file-taking commands require.
 * Returns: r(pass) r(fail) r(skip) r(done) r(ids) r(counted) r(declared)
-*          r(stataqa)    1 if the log carries any stataqa marker
-*          r(logversion) the version the log says wrote it, if any
+*          r(stataqa)      1 if the log carries any stataqa marker
+*          r(logversion)   the version the log says wrote it, if any
+*          r(logsupported) 1 if that version is one this scanner reads
+*          Every exit path posts all of them; DET-24 holds that true.
 * Author: Joao Pedro Azevedo (UNICEF)
 * License: MIT
 
@@ -92,11 +94,29 @@ program define stqa_scanlog, rclass
             di as error "stqa_scanlog: could not read the log (Mata rc `mrc')"
             di as text  "  file: `logfile'"
         }
-        return scalar pass = 0
-        return scalar fail = 0
-        return scalar done = 0
-        return scalar skip = 0
-        return local  ids  ""
+        * The FULL set, and posted from the defaults rather than from literal
+        * zeros. Two reasons, and the second is why it is written this way.
+        *
+        * The comment above says every exit path returns a complete r() set.
+        * Until 2.5.0 this path returned five of seven and the sentence was
+        * already false; adding three results made it five of nine. A caller
+        * reading r(logsupported) after a Mata failure got a missing value and
+        * no way to tell it from a log that had not been checked.
+        *
+        * Posting the locals means the defaults block above is the single
+        * source. A literal zero here is a second copy of a default, and two
+        * copies of a default are two things that drift apart. DET-24 pins the
+        * two paths to the same result names so this cannot rot again.
+        return scalar pass     = `s_pass'
+        return scalar fail     = `s_fail'
+        return scalar done     = `s_done'
+        return scalar skip     = `s_skip'
+        return local  ids      `"`s_ids'"'
+        return scalar counted  = `s_counted'
+        return scalar declared = `s_declared'
+        return scalar stataqa  = `s_mark'
+        return local  logversion   `"`s_logver'"'
+        return scalar logsupported = `s_supported'
         exit 0
     }
 

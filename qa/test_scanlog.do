@@ -235,3 +235,44 @@ stqa_test DET-23 "a malformed watermark degrades rather than aborting"
     local rc_q = _rc
     stqa_assert `rc_q' == 0, msg("a watermark carrying a quote raised rc `rc_q'")
 stqa_endtest
+
+*---------------------------------------------------------------------------
+* Every exit path returns the same r() names.
+*
+* stqa_scanlog.ado says so in a comment, and until 2.5.0 the comment was false:
+* the Mata-failure path posted five of seven results, and adding three more
+* made it five of nine. A caller reading r(logsupported) after a Mata failure
+* got a missing value indistinguishable from a log that had not been checked.
+*
+* The failure path is reachable on purpose -- dropping the Mata scanner makes
+* the next call return rc 3499 -- so it can be compared against a normal scan
+* rather than reasoned about. Comparing NAMES, not values: the values differ
+* legitimately between a real scan and a failed one; what must not differ is
+* which questions the caller can ask.
+*---------------------------------------------------------------------------
+stqa_test DET-24 "the Mata-failure path returns the same result names as a normal scan"
+    quietly stqa_scanlog using "`clean'"
+    local good : r(scalars)
+    local goodm : r(macros)
+    local good  = trim("`good'")
+    local goodm = trim("`goodm'")
+
+    * force the failure path: drop the scanner, then call
+    capture mata: mata drop stqa_scanlog_impl()
+    capture quietly stqa_scanlog using "`clean'"
+    local frc = _rc
+    local bad : r(scalars)
+    local badm : r(macros)
+    local bad  = trim("`bad'")
+    local badm = trim("`badm'")
+
+    * put the scanner back before anything else in the suite needs it
+    quietly discard
+    quietly stqa_scanlog using "`clean'"
+
+    stqa_assert `frc' == 0, msg("the Mata-failure path raised rc `frc' instead of reporting")
+    stqa_assert "`bad'" == "`good'", ///
+        msg("failure path returns scalars {`bad'}, a normal scan returns {`good'}")
+    stqa_assert "`badm'" == "`goodm'", ///
+        msg("failure path returns macros {`badm'}, a normal scan returns {`goodm'}")
+stqa_endtest
