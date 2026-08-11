@@ -108,7 +108,7 @@ stqa_test DET-06 "a skip marker is detected and is not counted as a failure"
 stqa_endtest
 
 *---------------------------------------------------------------------------
-* Provenance: the watermark, and telling "not a stataqa log" apart from
+* Provenance: the format header, and telling "not a stataqa log" apart from
 * "a stataqa run that did not finish".
 *
 * Before 2.5.0 those two were indistinguishable in every returned figure --
@@ -124,7 +124,7 @@ file write fh5 "PASS: Z-01 ok" _n
 file write fh5 "ALL CHECKS PASSED (1 checks)" _n
 file close fh5
 
-* an ordinary Stata log: no verdict tokens, no sentinel, no watermark
+* an ordinary Stata log: no verdict tokens, no sentinel, no format header
 file open fh6 using "`unmarked'", write replace
 file write fh6 "an ordinary log from some other do-file" _n
 file write fh6 ". summarize price" _n
@@ -140,8 +140,8 @@ stqa_test DET-19 "the log states which version wrote it, and the scanner reads i
     quietly stqa_scanlog using "`marked'"
     local lv `"`r(logversion)'"'
     local mk = r(stataqa)
-    stqa_assert `"`lv'"' == "9.9.9", msg("watermark not read back; got `lv'")
-    stqa_assert `mk' == 1, msg("a watermarked log was not recognised as a stataqa log")
+    stqa_assert `"`lv'"' == "9.9.9", msg("format header not read back; got `lv'")
+    stqa_assert `mk' == 1, msg("a log with a format header was not recognised as a stataqa log")
 stqa_endtest
 
 stqa_test DET-20 "a log stataqa never wrote is distinguished from a run that did not finish"
@@ -161,24 +161,24 @@ stqa_test DET-20 "a log stataqa never wrote is distinguished from a run that did
     stqa_assert `u_done' == `h_done', msg("the fixture is wrong: the two logs must agree on done")
     stqa_assert `u_fail' == `h_fail', msg("the fixture is wrong: the two logs must agree on fail")
     stqa_assert `u_mark' == 0, msg("a log with no stataqa markers reported r(stataqa)=1")
-    stqa_assert `h_mark' == 1, msg("a watermarked but unfinished run reported r(stataqa)=0")
+    stqa_assert `h_mark' == 1, msg("an unfinished run with a format header reported r(stataqa)=0")
 stqa_endtest
 
-stqa_test DET-21 "an unwatermarked stataqa log is still recognised by its verdict tokens"
-    * logs written before 2.5.0 carry no watermark. They must not suddenly read
-    * as foreign, or every archived log in every consumer repository would.
+stqa_test DET-21 "a stataqa log with no format header is still recognised by its verdict tokens"
+    * logs written before 2.5.0 carry no format header. They must not suddenly
+    * read as foreign, or every archived log in every consumer repository would.
     quietly stqa_scanlog using "`clean'"
     local mk = r(stataqa)
     local lv `"`r(logversion)'"'
     stqa_assert `mk' == 1, msg("a pre-2.5.0 log was not recognised as a stataqa log")
-    stqa_assert `"`lv'"' == "", msg("a log with no watermark reported a version: `lv'")
+    stqa_assert `"`lv'"' == "", msg("a log with no format header reported a version: `lv'")
 stqa_endtest
 
 *---------------------------------------------------------------------------
 * Failing elegantly on a format this scanner does not claim to read.
 *
-* Three ways a watermark can be unusable -- older than the window, newer than
-* it, or not a version at all -- and none of them may abort. The scanner
+* Three ways a format header can be unusable -- older than the window, newer
+* than it, or not a version at all -- and none of them may abort. The scanner
 * reports, the caller judges; a scanner that raised here would destroy the
 * evidence needed to record WHY nothing could be trusted, which is the same
 * reason a missing log is reported rather than raised.
@@ -194,8 +194,8 @@ foreach _p in "vnew 9.9.9" "vold 1.0.0" "vbad notaversion" {
     file close fhv
 }
 
-* a watermark carrying a quote: untrusted input reaching a macro, which is the
-* accident this package's scanner is written in Mata to avoid
+* a format header carrying a quote: untrusted input reaching a macro, which is
+* the accident this package's scanner is written in Mata to avoid
 file open fhq using "`vquote'", write replace
 file write fhq `"STATAQA LOG 2.5"0"' _n
 file write fhq "PASS: Z-01 ok" _n
@@ -221,19 +221,19 @@ stqa_test DET-22 "a log from outside the readable window is reported, not raised
     stqa_assert `pa_new' == 1, msg("an unsupported log returned no counts at all")
 stqa_endtest
 
-stqa_test DET-23 "a malformed watermark degrades rather than aborting"
+stqa_test DET-23 "a malformed format header degrades rather than aborting"
     * this fired as rc 198 before 2.5.0 shipped: the note interpolated the
-    * offending string into a quoted macro, so the report meant to flag a bad
-    * watermark died on one
+    * offending string into a quoted macro, so the report meant to flag a
+    * bad format header died on one
     capture quietly stqa_scanlog using "`vbad'"
     local rc_bad = _rc
     local su_bad = r(logsupported)
-    stqa_assert `rc_bad' == 0, msg("a malformed watermark raised rc `rc_bad'")
-    stqa_assert `su_bad' == 0, msg("a malformed watermark was reported as supported")
+    stqa_assert `rc_bad' == 0, msg("a malformed format header raised rc `rc_bad'")
+    stqa_assert `su_bad' == 0, msg("a malformed format header was reported as supported")
 
     capture quietly stqa_scanlog using "`vquote'"
     local rc_q = _rc
-    stqa_assert `rc_q' == 0, msg("a watermark carrying a quote raised rc `rc_q'")
+    stqa_assert `rc_q' == 0, msg("a format header carrying a quote raised rc `rc_q'")
 stqa_endtest
 
 *---------------------------------------------------------------------------
