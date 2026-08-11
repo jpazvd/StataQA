@@ -66,6 +66,37 @@ program define stqa_run
     local dq = char(34)
 
     * ------------------------------------------------------------------
+    * The package version, read once per run from the dispatcher's own *!
+    * header. Read rather than hardcoded so there is ONE source of truth: a
+    * version string duplicated into a second file is a version string that
+    * will disagree with itself, which is the drift this suite spends its
+    * time catching elsewhere. Parsed with substr/strpos rather than a
+    * regular expression, because Stata's regexm does not honour interval
+    * quantifiers and fails by returning 0 rather than erroring.
+    *
+    * Empty is a tolerated outcome, not an error: a runner that refused to
+    * run because it could not find its own header would trade a cosmetic
+    * gap for a dead suite. The watermark is simply omitted.
+    * ------------------------------------------------------------------
+    local stqa_pkgver ""
+    capture quietly findfile stataqa.ado
+    if _rc == 0 {
+        local _pkgado `"`r(fn)'"'
+        tempname _vh
+        capture file open `_vh' using `"`_pkgado'"', read text
+        if _rc == 0 {
+            file read `_vh' _vline
+            local _p = strpos(`"`macval(_vline)'"', "version ")
+            if `_p' > 0 {
+                local stqa_pkgver = trim(substr(`"`macval(_vline)'"', `_p' + 8, .))
+                local _q = strpos(`"`stqa_pkgver'"', " ")
+                if `_q' > 0 local stqa_pkgver = substr(`"`stqa_pkgver'"', 1, `_q' - 1)
+            }
+            file close `_vh'
+        }
+    }
+
+    * ------------------------------------------------------------------
     * Role resolution.  The option is authoritative; $stqa_role is the
     * session default a CI job sets once; absent both, the role is REVIEW:
     * safe to point at a repository you do not own.  Review executes
@@ -492,6 +523,26 @@ program define stqa_run
         capture log close `casename'
         capture log using `"`tlog'"', name(`casename') replace text
         local logrc = _rc
+
+        * The provenance watermark, stamped as the log's first line.
+        *
+        * The verdict grammar this package defines -- line-initial PASS:/FAIL:/
+        * SKIP: plus a completion sentinel -- is a contract between whatever
+        * wrote a log and whatever later reads it. Without a version in the log
+        * itself, a future scanner reading an old log has no way to know which
+        * version of that contract applied, and would silently apply its own.
+        * That is a false-green generator of exactly the shape this package
+        * exists to prevent, so the log says who wrote it.
+        *
+        * It goes ONLY in logs stataqa itself writes. Golden masters under
+        * qa/replay are excluded deliberately: those capture the output of the
+        * code under test, not of the harness, and they are pinned by bytes in
+        * the manifest. Stamping a tool version into them would make every
+        * blessed pair fail on every release -- a tool that changes its own
+        * baselines when it upgrades is not offering baselines.
+        if (`logrc' == 0 & `"`stqa_pkgver'"' != "") {
+            di as text "STATAQA LOG `stqa_pkgver'"
+        }
 
         if `logrc' {
             local verdict "NOTCOMPLETED"

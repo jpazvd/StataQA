@@ -1,11 +1,18 @@
-*! version 2.0.0  06aug2026
+*! version 2.1.0  10aug2026
 * stqa_scanlog: Read a suite log and report what it actually says
 * Description: Scans a Stata log for line-initial PASS:/FAIL:/SKIP: verdict
 *              tokens and for the completion sentinel, collects the failed test
 *              ids, and returns everything in r(). The file is read in Mata so
 *              that log content can never be taken for syntax. Verdicts are read
 *              from the log, never from a batch exit code.
-* Options: using(filename)   the log to scan (may also be given positionally)
+* Syntax:  stqa_scanlog [using] logfile   -- the keyword is optional; the
+*          runners use -using- because that is the convention the other
+*          seven file-taking commands require.
+* Returns: r(pass) r(fail) r(skip) r(done) r(ids) r(counted) r(declared)
+*          r(stataqa)      1 if the log carries any stataqa marker
+*          r(logversion)   the version the log says wrote it, if any
+*          r(logsupported) 1 if that version is one this scanner reads
+*          Every exit path posts all of them; DET-24 holds that true.
 * Author: Joao Pedro Azevedo (UNICEF)
 * License: MIT
 
@@ -44,6 +51,32 @@ program define stqa_scanlog, rclass
     local s_counted  0
     local s_declared 0
     local s_ids      ""
+    local s_mark     0
+    local s_logver   ""
+
+    *-----------------------------------------------------------------------
+    * The window of log formats this scanner claims to read.
+    *
+    * The verdict grammar is a contract, and it has changed once already: until
+    * 2.1.0 the completion sentinel was matched ANYWHERE in a line rather than
+    * line-initially, so a log written under the old rule can be read as
+    * complete by a scanner applying the new one. That is the failure this
+    * window exists to make visible rather than silent.
+    *
+    * Both bounds are literals in this file, on purpose. Reading them from
+    * elsewhere would make the answer depend on which copy of the package is
+    * installed, when the question being asked is precisely "does THIS reader
+    * understand THAT log".
+    *
+    * Raise MAX when the grammar gains a marker. Raise MIN only when an old
+    * format genuinely stops being readable -- doing so declares every archived
+    * log below it unverified, which is a claim to make deliberately.
+    *-----------------------------------------------------------------------
+    local LOGFMT_MIN "2.5.0"
+    local LOGFMT_MAX "2.5.0"
+
+    local s_supported 1
+    local s_fmtnote   ""
 
     * The path is handed to Mata through st_local(), not interpolated into a
     * Mata string literal, so a path containing a quote cannot break the call.
@@ -61,12 +94,77 @@ program define stqa_scanlog, rclass
             di as error "stqa_scanlog: could not read the log (Mata rc `mrc')"
             di as text  "  file: `logfile'"
         }
-        return scalar pass = 0
-        return scalar fail = 0
-        return scalar done = 0
-        return scalar skip = 0
-        return local  ids  ""
+        * The FULL set, and posted from the defaults rather than from literal
+        * zeros. Two reasons, and the second is why it is written this way.
+        *
+        * The comment above says every exit path returns a complete r() set.
+        * Until 2.5.0 this path returned five of seven and the sentence was
+        * already false; adding three results made it five of nine. A caller
+        * reading r(logsupported) after a Mata failure got a missing value and
+        * no way to tell it from a log that had not been checked.
+        *
+        * Posting the locals means the defaults block above is the single
+        * source. A literal zero here is a second copy of a default, and two
+        * copies of a default are two things that drift apart. DET-24 pins the
+        * two paths to the same result names so this cannot rot again.
+        return scalar pass     = `s_pass'
+        return scalar fail     = `s_fail'
+        return scalar done     = `s_done'
+        return scalar skip     = `s_skip'
+        return local  ids      `"`s_ids'"'
+        return scalar counted  = `s_counted'
+        return scalar declared = `s_declared'
+        return scalar stataqa  = `s_mark'
+        return local  logversion   `"`s_logver'"'
+        return scalar logsupported = `s_supported'
         exit 0
+    }
+
+    *-----------------------------------------------------------------------
+    * Is the declared format one this scanner claims to read?
+    *
+    * Three outcomes, and each is reported rather than raised. A scanner that
+    * aborted on an unfamiliar log would destroy the evidence the caller needs
+    * to record WHY nothing could be read -- the same reason a missing log is
+    * reported rather than raised, twenty lines below.
+    *
+    *   no watermark      supported. Logs written before 2.5.0 carry none, and
+    *                     are recognised by their verdict tokens instead. To
+    *                     call them unsupported would orphan every archived log
+    *                     in every consumer repository on the day of upgrade.
+    *   unparseable       NOT supported, and said so. A watermark that is not
+    *                     a version is a corrupted or forged line, and guessing
+    *                     past it is how a bad log gets read as a good one.
+    *   outside the window  NOT supported, naming the direction.
+    *-----------------------------------------------------------------------
+    if (`"`s_logver'"' != "") {
+        * Each r(value) is copied into a local immediately. The next call to an
+        * r-class program replaces r(), which is the hazard DATA-02 in this
+        * package's own suite exists to pin -- and a version comparison reading
+        * a stale r() would answer confidently and wrongly.
+        stqa_semver `"`s_logver'"'
+        local _lv = r(value)
+        stqa_semver "`LOGFMT_MIN'"
+        local _min = r(value)
+        stqa_semver "`LOGFMT_MAX'"
+        local _max = r(value)
+
+        if (missing(`_lv')) {
+            local s_supported 0
+            * The offending string is NOT interpolated into this note. It is
+            * already printed on the "written by" line above, and putting
+            * untrusted text inside a quoted macro is how the report meant to
+            * flag a bad watermark ends up dying on one.
+            local s_fmtnote   "the declared version is not a version number"
+        }
+        else if (`_lv' < `_min') {
+            local s_supported 0
+            local s_fmtnote   "older than `LOGFMT_MIN', the oldest format this scanner reads"
+        }
+        else if (`_lv' > `_max') {
+            local s_supported 0
+            local s_fmtnote   "newer than `LOGFMT_MAX', the newest format this scanner knows"
+        }
     }
 
     *-----------------------------------------------------------------------
@@ -100,6 +198,32 @@ program define stqa_scanlog, rclass
         if (`"`s_ids'"' != "") {
             di as text  "  failed ids:`s_ids'"
         }
+
+        * Provenance, when the log states it. A log written by a different
+        * version was read under THIS version's grammar, and the reader is
+        * entitled to know that before trusting the counts above. Said, not
+        * acted on: the precedent is stqa_replay, which reports a Stata-version
+        * mismatch and declines to compare rather than guessing through it.
+        if (`"`s_logver'"' != "") {
+            di as text  `"  written by: stataqa `s_logver'"'
+            if (`s_supported' == 0) {
+                di as error `"  format   : `s_fmtnote'"'
+                di as text  "  The counts above were read with this version's rules."
+                di as text  "  Re-read the log with stataqa `s_logver', or treat the"
+                di as text  "  figures as unverified."
+            }
+        }
+
+        * The compatibility observation. Phrased for what was actually
+        * established -- no markers were found -- and never as "this is not a
+        * stataqa log", which is a claim this command cannot support: an empty
+        * log carries no markers, and so does a genuine run that died before
+        * its first test. Both are reported honestly by the sentinel line
+        * above; this line only stops a wrong filename from being read as a
+        * red suite.
+        if (`s_mark' == 0) {
+            di as text  "  markers  : none -- this may not be a stataqa run log"
+        }
     }
 
     * This command reports; it does not judge. It exits 0 even when the log is
@@ -116,6 +240,42 @@ program define stqa_scanlog, rclass
     * the latter means the assertion was suppressed by -capture-.
     return scalar counted  = `s_counted'
     return scalar declared = `s_declared'
+
+    * Provenance. r(stataqa) is 1 when the log carries any marker only this
+    * package writes, 0 when it carries none -- which distinguishes "the run
+    * did not finish" from "this file was never produced by stataqa", two
+    * diagnoses that were previously identical in every returned figure.
+    * r(logversion) is the version the log says wrote it, empty for a log
+    * written before the watermark existed.
+    return scalar stataqa    = `s_mark'
+    return local  logversion `"`s_logver'"'
+
+    * 1 when this scanner claims to understand the format the log declares.
+    * A log with no watermark is supported: it predates the watermark and is
+    * read by its verdict tokens. 0 means the counts above were produced by
+    * rules the log was not written under, and should not be trusted without
+    * re-reading under the version named in r(logversion).
+    return scalar logsupported = `s_supported'
+end
+
+*---------------------------------------------------------------------------
+* Compare two dotted versions as one number, so that 2.10.0 sorts after 2.9.0
+* rather than before it. Missing when the string is not MAJOR.MINOR.PATCH,
+* which the caller treats as "unreadable", never as "old" or "new" -- a
+* corrupted watermark is not evidence about a direction.
+*
+* Written as a program rather than inline because it is used three times and
+* an off-by-one in a version comparison is the kind of defect that reports the
+* wrong answer confidently.
+*---------------------------------------------------------------------------
+program define stqa_semver, rclass
+    version 14.0
+    args v
+    local a = .
+    if regexm(`"`v'"', "^([0-9]+)\.([0-9]+)\.([0-9]+)$") {
+        local a = real(regexs(1)) * 1000000 + real(regexs(2)) * 1000 + real(regexs(3))
+    }
+    return scalar value = `a'
 end
 
 *===========================================================================
@@ -161,12 +321,14 @@ mata:
 void stqa_scanlog_impl()
 {
     string colvector lines
-    string scalar    path, s, ids, id, tail, head
+    string scalar    path, s, ids, id, tail, head, logver
     real scalar      i, n, p, q, np, nf, done, skip, declared, d_fail, d_inc
+    real scalar      mark
 
     path = st_local("logfile")
 
     np = 0 ; nf = 0 ; done = 0 ; skip = 0 ; ids = "" ; declared = 0
+    mark = 0 ; logver = ""
 
     // Post the empty result first, so that every early return below still
     // leaves the caller with a complete set of locals.
@@ -176,6 +338,8 @@ void stqa_scanlog_impl()
     st_local("s_skip",  "0")
     st_local("s_ids",   "")
     st_local("s_found", "0")
+    st_local("s_mark",  "0")
+    st_local("s_logver", "")
 
     if (path == "")         return
     if (!fileexists(path))  return
@@ -206,10 +370,14 @@ void stqa_scanlog_impl()
         // and those echoes begin with a period or with a line number, so they
         // do not count. This is the whole reason the contract insists that
         // verdict tokens be emitted at the start of a line.
-        if (substr(s, 1, 6) == "PASS: ") np = np + 1
+        if (substr(s, 1, 6) == "PASS: ") {
+            np   = np + 1
+            mark = 1
+        }
 
         if (substr(s, 1, 6) == "FAIL: ") {
             nf = nf + 1
+            mark = 1
 
             // The id is the first token after the marker.
             id = strtrim(substr(s, 7, 32))
@@ -242,7 +410,10 @@ void stqa_scanlog_impl()
         // inside a run that failed, and a substring match reports that run as
         // having run to completion. The distinction the rule enforces is
         // between "the log mentions the sentinel" and "the suite emitted it".
-        if (substr(s, 1, 17) == "ALL CHECKS PASSED")      done = 1
+        if (substr(s, 1, 17) == "ALL CHECKS PASSED") {
+            done = 1
+            mark = 1
+        }
 
         // The red sentinel carries its own count: "STATAQA SUITE COMPLETE
         // (7 checks, 2 failed)". That declared figure must be honoured, and
@@ -258,6 +429,7 @@ void stqa_scanlog_impl()
         // program, stqa_report, and anything scraping the logs from CI.
         if (substr(s, 1, 22) == "STATAQA SUITE COMPLETE") {
             done = 1
+            mark = 1
             p = strpos(s, ",")
             if (p > 0) {
                 tail = strtrim(substr(s, p + 1, .))
@@ -310,8 +482,50 @@ void stqa_scanlog_impl()
         // test that merely mentions the phrase would be scored as skipped. A
         // missing prerequisite is declared with stqa_skip, which emits the
         // marker this rule reads.
-        if (substr(s, 1, 6) == "SKIP: ") skip = skip + 1
+        if (substr(s, 1, 6) == "SKIP: ") {
+            skip = skip + 1
+            mark = 1
+        }
+
+        // The provenance watermark stqa_run stamps into every case log it
+        // opens: "STATAQA LOG 2.5.0". Read here rather than inferred, because
+        // the grammar this function applies -- line-initial verdict tokens
+        // plus a sentinel -- is a contract, and a scanner that cannot tell
+        // WHICH version wrote a log has no way to know whether its own rules
+        // are the rules that log was written under. Matched line-initially
+        // like everything else.
+        if (substr(s, 1, 12) == "STATAQA LOG ") {
+            logver = strtrim(substr(s, 13, .))
+            p = strpos(logver, " ")
+            if (p > 0) logver = substr(logver, 1, p - 1)
+
+            // Sanitised exactly as a failed-test id is, and for the same
+            // reason: this string is about to travel through a Stata local,
+            // through -return local-, and into a -display-. A watermark is
+            // untrusted input -- it can be corrupted, truncated by a killed
+            // run, or simply not written by this package at all -- and a
+            // version carrying a backtick or a quote would break the very
+            // report that exists to say the version looks wrong.
+            logver = subinstr(logver, char(96), "")
+            logver = subinstr(logver, char(39), "")
+            logver = subinstr(logver, char(36), "")
+            logver = subinstr(logver, char(34), "")
+
+            mark = 1
+        }
     }
+
+    // Is this a stataqa log at all? The union of everything only stataqa
+    // writes. This exists because every counter above reads ZERO on a log
+    // stataqa never produced -- which is byte-identical to a genuine stataqa
+    // log whose run died before the sentinel was stamped. Those are different
+    // defects with different remedies: investigate the run, versus you named
+    // the wrong file. Without this the caller cannot tell them apart.
+    //
+    // It reports the ABSENCE OF EVIDENCE, never the absence of the thing. An
+    // empty log carries no markers, and so does a genuine run that died before
+    // its first test. That is why the flag is named for what was found and the
+    // message says "carries no stataqa markers", never "is not a stataqa log".
 
     // The reported failure count is the greater of what was counted from
     // tokens and what the closing sentinel declared. They differ only when
@@ -327,6 +541,8 @@ void stqa_scanlog_impl()
     st_local("s_done",     strofreal(done))
     st_local("s_skip",     strofreal(skip))
     st_local("s_ids",      ids)
+    st_local("s_mark",     strofreal(mark))
+    st_local("s_logver",   logver)
 }
 
 end
