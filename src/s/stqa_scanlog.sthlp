@@ -129,14 +129,14 @@ scanner claims to read, 0 if it falls outside that window or is not a version at
 all. A log with no version at all is supported: it predates the format header and
 is read by its verdict tokens{p_end}
 {synopt:{cmd:r(stataqa)}}1 if the log carries any marker only {cmd:stataqa} writes
-(a verdict token, a completion sentinel, or the version watermark), 0 if it
+(a verdict token, a completion sentinel, or the format header), 0 if it
 carries none. A log with no markers may still be a genuine run that died
 before its first test, so this reports what was found, not what the file is{p_end}
 
 {p2col 5 20 24 2: Macros}{p_end}
 {synopt:{cmd:r(ids)}}space-separated ids of the failed checks{p_end}
 {synopt:{cmd:r(logversion)}}the version of {cmd:stataqa} the log says wrote it,
-empty for a log written before 2.5.0, when the watermark was introduced{p_end}
+empty for a log written before 2.5.0, when the format header was introduced{p_end}
 {p2colreset}{...}
 
 {pstd}

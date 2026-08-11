@@ -76,7 +76,7 @@ program define stqa_run
     *
     * Empty is a tolerated outcome, not an error: a runner that refused to
     * run because it could not find its own header would trade a cosmetic
-    * gap for a dead suite. The watermark is simply omitted.
+    * gap for a dead suite. The format header is simply omitted.
     * ------------------------------------------------------------------
     local stqa_pkgver ""
     capture quietly findfile stataqa.ado
@@ -524,7 +524,7 @@ program define stqa_run
         capture log using `"`tlog'"', name(`casename') replace text
         local logrc = _rc
 
-        * The provenance watermark, stamped as the log's first line.
+        * The format header, stamped as the log's first line.
         *
         * The verdict grammar this package defines -- line-initial PASS:/FAIL:/
         * SKIP: plus a completion sentinel -- is a contract between whatever

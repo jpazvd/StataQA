@@ -11,7 +11,9 @@
 * Returns: r(pass) r(fail) r(skip) r(done) r(ids) r(counted) r(declared)
 *          r(stataqa)      1 if the log carries any stataqa marker
 *          r(logversion)   the version the log says wrote it, if any
-*          r(logsupported) 1 if that version is one this scanner reads
+*          r(logsupported) 1 if r(logversion) is empty or names a version this
+*                          scanner reads, else 0. Empty counts as supported:
+*                          every log written before 2.5.0 carries no header.
 *          Every exit path posts all of them; DET-24 holds that true.
 * Author: Joao Pedro Azevedo (UNICEF)
 * License: MIT
@@ -128,13 +130,14 @@ program define stqa_scanlog, rclass
     * to record WHY nothing could be read -- the same reason a missing log is
     * reported rather than raised, twenty lines below.
     *
-    *   no watermark      supported. Logs written before 2.5.0 carry none, and
+    *   no format header  supported. Logs written before 2.5.0 carry none, and
     *                     are recognised by their verdict tokens instead. To
     *                     call them unsupported would orphan every archived log
     *                     in every consumer repository on the day of upgrade.
-    *   unparseable       NOT supported, and said so. A watermark that is not
-    *                     a version is a corrupted or forged line, and guessing
-    *                     past it is how a bad log gets read as a good one.
+    *   unparseable       NOT supported, and said so. A format header that
+    *                     is not a version is a corrupted or forged line,
+    *                     and guessing past it is how a bad log gets read
+    *                     as a good one.
     *   outside the window  NOT supported, naming the direction.
     *-----------------------------------------------------------------------
     if (`"`s_logver'"' != "") {
@@ -154,7 +157,7 @@ program define stqa_scanlog, rclass
             * The offending string is NOT interpolated into this note. It is
             * already printed on the "written by" line above, and putting
             * untrusted text inside a quoted macro is how the report meant to
-            * flag a bad watermark ends up dying on one.
+            * flag a bad format header ends up dying on one.
             local s_fmtnote   "the declared version is not a version number"
         }
         else if (`_lv' < `_min') {
@@ -246,15 +249,15 @@ program define stqa_scanlog, rclass
     * did not finish" from "this file was never produced by stataqa", two
     * diagnoses that were previously identical in every returned figure.
     * r(logversion) is the version the log says wrote it, empty for a log
-    * written before the watermark existed.
+    * written before the format header existed.
     return scalar stataqa    = `s_mark'
     return local  logversion `"`s_logver'"'
 
     * 1 when this scanner claims to understand the format the log declares.
-    * A log with no watermark is supported: it predates the watermark and is
-    * read by its verdict tokens. 0 means the counts above were produced by
-    * rules the log was not written under, and should not be trusted without
-    * re-reading under the version named in r(logversion).
+    * A log with no format header is supported: it predates the header and
+    * is read by its verdict tokens. 0 means the counts above were produced
+    * by rules the log was not written under, and should not be trusted
+    * without re-reading under the version named in r(logversion).
     return scalar logsupported = `s_supported'
 end
 
@@ -262,7 +265,7 @@ end
 * Compare two dotted versions as one number, so that 2.10.0 sorts after 2.9.0
 * rather than before it. Missing when the string is not MAJOR.MINOR.PATCH,
 * which the caller treats as "unreadable", never as "old" or "new" -- a
-* corrupted watermark is not evidence about a direction.
+* corrupted format header is not evidence about a direction.
 *
 * Written as a program rather than inline because it is used three times and
 * an off-by-one in a version comparison is the kind of defect that reports the
@@ -487,7 +490,7 @@ void stqa_scanlog_impl()
             mark = 1
         }
 
-        // The provenance watermark stqa_run stamps into every case log it
+        // The format header stqa_run stamps into every case log it
         // opens: "STATAQA LOG 2.5.0". Read here rather than inferred, because
         // the grammar this function applies -- line-initial verdict tokens
         // plus a sentinel -- is a contract, and a scanner that cannot tell
@@ -501,8 +504,8 @@ void stqa_scanlog_impl()
 
             // Sanitised exactly as a failed-test id is, and for the same
             // reason: this string is about to travel through a Stata local,
-            // through -return local-, and into a -display-. A watermark is
-            // untrusted input -- it can be corrupted, truncated by a killed
+            // through -return local-, and into a -display-. A format header
+            // is untrusted input -- it can be corrupted, truncated by a killed
             // run, or simply not written by this package at all -- and a
             // version carrying a backtick or a quote would break the very
             // report that exists to say the version looks wrong.
