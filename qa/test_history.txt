@@ -198,3 +198,23 @@ Skip notes:
 Notes:      path=qa pattern=test*.do
 Result:     GATE GREEN
 ==============================================================================
+
+==============================================================================
+Test Run:   10 Aug 2026
+Started:    20:50:54
+Ended:      20:51:16
+Duration:   0m 22s
+Branch:     main
+Commit:     1f3499141ef6ce4910e5a5abd9376b1ea67382de
+Dirty:      no
+Version:    2.5.0
+Stata:      17 MP (Windows)
+Run:        110
+Passed:     110
+Failed:     0
+Skipped:    0
+Failed IDs: 
+Skip notes: 
+Notes:      path=qa pattern=test*.do
+Result:     GATE GREEN
+==============================================================================
