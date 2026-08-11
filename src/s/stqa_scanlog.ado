@@ -13,7 +13,8 @@
 *          r(logversion)   the version the log says wrote it, if any
 *          r(logsupported) 1 if r(logversion) is empty or names a version this
 *                          scanner reads, else 0. Empty counts as supported:
-*                          every log written before 2.5.0 carries no header.
+*                          every log written before 2.5.0 carries no format
+*                          header.
 *          Every exit path posts all of them; DET-24 holds that true.
 * Author: Joao Pedro Azevedo (UNICEF)
 * License: MIT
